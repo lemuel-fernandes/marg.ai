@@ -1,13 +1,13 @@
-# <p align="center">🚗 PathSense</p>
+# <p align="center">MARG>AI</p>
 <h2 align="center">Adaptive Path Planning & Collision Avoidance for Autonomous Vehicles on Unstructured Indian Roads 🇮🇳</h2>
 <hr>
-<h2 align="center">TEAM [YOUR TEAM NAME] — Smart India Hackathon 2026 🌟</h2>
+<h2 align="center">TEAM SARVOTTAM — Smart India Hackathon 2026 🌟</h2>
 
 <h2 align="center">COMPLETE DESCRIPTION</h2>
 
 ### PS ID : SIH26037
 
-### Team ID : ]
+### Team ID : 
 
 ### Organization : MathWorks
 
@@ -25,7 +25,6 @@ Adaptive Path Planning and Collision Avoidance for Autonomous Vehicles on Unstru
 
 <b>Objective:</b> Design and simulate (with an optional small-scale hardware demo) an adaptive path-planning and collision-avoidance system that lets an autonomous vehicle navigate unstructured Indian roads safely and efficiently, reacting in real time to static and dynamic obstacles while respecting vehicle dynamics.
 
-> ⚠️ Replace this section with the **exact wording copied from the official SIH portal PS page** before final submission — this is a working summary for planning purposes.
 
 ### Aim :
 1. To build a path-planning + collision-avoidance stack that stays reliable when lanes, signage, and traffic discipline are absent or unreliable.
@@ -45,7 +44,6 @@ The system perceives its surroundings (camera/LiDAR/simulated sensors), builds a
 8. (Stretch) Validate on a small-scale autonomous rig / robot car in a physical obstacle course.
 
 ### Status :
-_(Update this section sprint by sprint — see ROADMAP.md)_
 - [ ] Literature review & approach finalized
 - [ ] Simulation environment set up
 - [ ] Perception module (obstacle/pothole detection)
@@ -91,7 +89,6 @@ Perception Module ──► Occupancy / Cost Map
 ⦿ <b>Version Control / PM :</b>
 * [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/) [![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)](https://www.notion.so/)
 
-> Exact tools depend on final team decision (MATLAB/Simulink-first vs ROS2/Gazebo/CARLA-first) — see ROADMAP.md Sprint 0, Issue #1.
 
 ### Important URLs :
 ⭐️ <b>Repo :</b> [Add GitHub link]
@@ -123,5 +120,3 @@ Perception Module ──► Occupancy / Cost Map
 ## Support
 💙 If you like this project, give it a ⭐ and share it with friends!
 Contributions, issues and PRs from teammates are welcome — see `ROADMAP.md` for open issues.
-
-<h1 align="center">🙏 ALL THE BEST TEAM 🙏</h1>
