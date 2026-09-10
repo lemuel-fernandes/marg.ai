@@ -1,30 +1,57 @@
 """Inter-module message bus."""
 
-import logging
-from typing import Callable, Any, Dict, List
+from collections import defaultdict
+from typing import Any, Callable, Dict, List
 
-logger = logging.getLogger(__name__)
+from src.common.types.control import ControlCommand
+from src.common.types.costmap import Costmap
+from src.common.types.path import GlobalPath
+from src.common.types.perception import PerceptionOutput
+from src.common.types.trajectory import LocalTrajectory
 
-class MessageBus:
+
+class Topic:
+    PERCEPTION = "perception/output"
+    COSTMAP = "mapping/costmap"
+    GLOBAL_PATH = "planning/global_path"
+    LOCAL_TRAJECTORY = "planning/local_trajectory"
+    CONTROL_COMMAND = "control/command"
+
+
+TOPIC_TYPES: Dict[str, type] = {
+    Topic.PERCEPTION: PerceptionOutput,
+    Topic.COSTMAP: Costmap,
+    Topic.GLOBAL_PATH: GlobalPath,
+    Topic.LOCAL_TRAJECTORY: LocalTrajectory,
+    Topic.CONTROL_COMMAND: ControlCommand,
+}
+
+
+class MessageValidationError(RuntimeError):
+    pass
+
+
+class TypedMessageBus:
     """
-    A simple synchronous Pub/Sub message bus. 
-    Allows modules to communicate without hardcoding dependencies.
+    Typed telemetry bus.
+
+    This is intentionally NOT the primary execution engine.
+    It is used for observability and downstream non-critical consumers.
     """
+
     def __init__(self):
-        self._subscribers: Dict[str, List[Callable]] = {}
+        self._subscribers: Dict[str, List[Callable[[Any], None]]] = defaultdict(list)
 
-    def subscribe(self, topic: str, callback: Callable):
-        if topic not in self._subscribers:
-            self._subscribers[topic] = []
-        self._subscribers[topic].append(callback)
-        logger.debug(f"Subscribed to topic: {topic}")
+    def subscribe(self, topic: str, handler: Callable[[Any], None]) -> None:
+        self._subscribers[topic].append(handler)
 
-    def publish(self, topic: str, data: Any):
-        if topic in self._subscribers:
-            for callback in self._subscribers[topic]:
-                try:
-                    callback(data)
-                except Exception as e:
-                    logger.error(f"Error in callback for topic {topic}: {e}")
-        else:
-            logger.warning(f"No subscribers for topic: {topic}")
+    def publish(self, topic: str, message: Any) -> None:
+        expected_type = TOPIC_TYPES.get(topic)
+        if expected_type is not None and not isinstance(message, expected_type):
+            raise MessageValidationError(
+                f"Topic '{topic}' expects {expected_type.__name__}, "
+                f"got {type(message).__name__}"
+            )
+
+        for handler in self._subscribers.get(topic, []):
+            handler(message)
