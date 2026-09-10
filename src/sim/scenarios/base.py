@@ -84,3 +84,7 @@ class Scenario:
 
     def evaluate(self, log: RunLog, v_cfg: VehicleConfig) -> ScenarioResult:
         raise NotImplementedError
+    
+    def get_perception_module(self, provider):
+        from src.perception.ground_truth_perception import GroundTruthPerception
+        return GroundTruthPerception(provider)

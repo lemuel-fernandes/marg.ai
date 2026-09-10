@@ -39,7 +39,7 @@ class ScenarioExecutor:
         bus.subscribe(Topic.GLOBAL_PATH, lambda p: latest_path.update({"path": p}))
 
         pipeline = IntegrationPipeline(
-            perception=GroundTruthPerception(lambda: sc.obstacles_at(clock["t"])),
+            perception=sc.get_perception_module(lambda: sc.obstacles_at(clock["t"])),
             costmap_builder=LocalGridCostmapBuilder(c_cfg),
             global_planner=AStarGlobalPlanner(target_speed=v_cfg.max_speed),
             local_planner=DWALocalPlanner(v_cfg, dwa_cfg),
