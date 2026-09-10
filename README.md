@@ -111,6 +111,37 @@ Perception Module ──► Occupancy / Cost Map
 5. [Member 5 — Simulation & Testing](https://github.com/)
 6. [Member 6 — Dashboard, Docs & Presentation](https://github.com/)
 
+```mermaid
+graph TD
+    subgraph Simulation / Hardware
+        S[Simulator / Sensors] -->|Raw Sensor Data| P
+        V[Vehicle Dynamics] -->|State Feedback| C
+    end
+
+    subgraph Perception [M2]
+        P[Perception Node] -->|Detections & Tracks| M
+    end
+
+    subgraph Mapping [M1 / Shared]
+        M[Costmap Generator] -->|Occupancy Grid + Inflation| GP
+    end
+
+    subgraph Planning [M3 & M4]
+        GP[Global Planner] -->|Global Waypoints| LP
+        LP[Local Planner / Collision Avoidance] -->|Local Trajectory| C
+    end
+
+    subgraph Control [M4]
+        C[Vehicle Controller] -->|Steering / Throttle / Brake| V
+    end
+
+    subgraph Dashboard [M6]
+        P -.->|Live Telemetry| D[Live Dashboard]
+        LP -.->|Path & Margins| D
+        V -.->|Vehicle State| D
+    end
+```
+
 ### How-to-run
 - Clone this repository.
 - See `/docs/setup.md` for environment setup (MATLAB/Simulink + Python/ROS2 dependencies).
