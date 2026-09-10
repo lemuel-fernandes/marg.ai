@@ -45,3 +45,5 @@ class DWAConfig:
     arrival_radius_m: float = 1.5
     clearance_cap_m: float = 3.0
     stall_penalty: float = 1.5
+    goal_weight: float = 0.5          # weight for goal-proximity score term
+    lethal_threshold: float = 0.9     # costmap cost treated as lethal for rollouts

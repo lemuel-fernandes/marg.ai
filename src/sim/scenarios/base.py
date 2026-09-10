@@ -91,3 +91,15 @@ class Scenario:
     
     def road_network(self):
         return None
+    
+from src.common.utils.geometry import oriented_rect_clearance
+
+def min_obstacle_clearance(log, obstacles_at, ego_half_width: float = 0.95) -> float:
+    worst = float("inf")
+    for t, state in zip(log.times, log.states):
+        for obs in obstacles_at(t):
+            c = oriented_rect_clearance(state.pose.x, state.pose.y,
+                                        obs.pose.x, obs.pose.y, obs.pose.heading,
+                                        obs.length, obs.width) - ego_half_width
+            worst = min(worst, c)
+    return worst

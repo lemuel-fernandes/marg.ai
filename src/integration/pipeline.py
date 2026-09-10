@@ -260,9 +260,11 @@ class IntegrationPipeline:
     def _path_invalidated(self, obstacles) -> bool:
         if self._current_global_path is None:
             return False
+        from src.common.utils.geometry import oriented_rect_clearance
         for pt in self._current_global_path.points:
             for obs in obstacles:
-                r = max(obs.length, obs.width) / 2.0 + self._invalidation_margin
-                if math.hypot(pt.pose.x - obs.pose.x, pt.pose.y - obs.pose.y) < r:
+                if oriented_rect_clearance(pt.pose.x, pt.pose.y,
+                                           obs.pose.x, obs.pose.y, obs.pose.heading,
+                                           obs.length, obs.width) < self._invalidation_margin:
                     return True
         return False

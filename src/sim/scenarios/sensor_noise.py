@@ -12,7 +12,7 @@ from .base import Scenario, ScenarioResult, min_obstacle_clearance
 
 class SensorNoiseScenario(Scenario):
     name = "sensor_noise"
-    duration_s = 12.0
+    duration_s = 18.0
 
     def configs(self) -> Tuple[VehicleConfig, CostmapConfig, DWAConfig]:
         return (

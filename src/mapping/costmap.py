@@ -104,41 +104,28 @@ class LocalGridCostmapBuilder:
 
         return np.where(distance > self.road_network.half_width, 1.0, 0.0).astype(np.float32)
 
-    def _add_obstacle(
-        self,
-        data: np.ndarray,
-        obs: Obstacle,
-        origin_x: float,
-        origin_y: float,
-    ) -> None:
+    def _add_obstacle(self, data, obs, origin_x, origin_y):
         height, width = data.shape
-
-        radius = max(obs.length, obs.width) / 2.0 + self.cfg.inflation_radius
-        if radius <= 0.0:
-            return
-
+        extent = max(obs.length, obs.width) / 2.0 + self.cfg.inflation_radius
         cx = int(round((obs.pose.x - origin_x) / self.cfg.resolution))
         cy = int(round((obs.pose.y - origin_y) / self.cfg.resolution))
-
-        r_cells = int(math.ceil(radius / self.cfg.resolution))
-
-        if (
-            cx < -r_cells
-            or cy < -r_cells
-            or cx >= width + r_cells
-            or cy >= height + r_cells
-        ):
+        r = int(math.ceil(extent / self.cfg.resolution))
+        x0, x1 = max(0, cx - r), min(width - 1, cx + r)
+        y0, y1 = max(0, cy - r), min(height - 1, cy + r)
+        if x0 > x1 or y0 > y1:
             return
-
-        min_x = max(0, cx - r_cells)
-        max_x = min(width - 1, cx + r_cells)
-        min_y = max(0, cy - r_cells)
-        max_y = min(height - 1, cy + r_cells)
-
-        for y in range(min_y, max_y + 1):
-            for x in range(min_x, max_x + 1):
-                dist = math.hypot(x - cx, y - cy) * self.cfg.resolution
-                if dist <= radius:
-                    cost = 1.0 - (dist / (radius + 1e-6))
-                    if cost > data[y, x]:
-                        data[y, x] = cost
+        xs = origin_x + np.arange(x0, x1 + 1) * self.cfg.resolution
+        ys = origin_y + np.arange(y0, y1 + 1) * self.cfg.resolution
+        X, Y = np.meshgrid(xs, ys)
+        dx, dy = X - obs.pose.x, Y - obs.pose.y
+        c, s = math.cos(obs.pose.heading), math.sin(obs.pose.heading)
+        lx = dx * c + dy * s
+        ly = -dx * s + dy * c
+        clear_x = np.abs(lx) - obs.length / 2.0
+        clear_y = np.abs(ly) - obs.width / 2.0
+        inside = (clear_x <= 0) & (clear_y <= 0)
+        d = np.where(inside, 0.0, np.hypot(np.maximum(clear_x, 0), np.maximum(clear_y, 0)))
+        cost = np.clip(1.0 - d / (self.cfg.inflation_radius + 1e-6), 0.0, 1.0)
+        cost[inside] = 1.0
+        window = data[y0:y1 + 1, x0:x1 + 1]
+        np.maximum(window, cost, out=window)

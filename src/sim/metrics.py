@@ -28,24 +28,26 @@ def calculate_avg_jerk(log: RunLog, dt: float = 0.1) -> float:
         jerks.append(abs(a2 - a1) / dt)
     return sum(jerks) / len(jerks)
 
-def calculate_min_ttc(log: RunLog, obstacles_at: Callable[[float], List[Obstacle]]) -> float:
-    """Calculates minimum Time-To-Collision with dynamic obstacles."""
-    min_ttc = float('inf')
-    ego_r = 1.15  # Rough ego radius (width/2 + padding)
-    
+from src.common.utils.geometry import oriented_rect_clearance
+
+def calculate_min_ttc(log, obstacles_at, ego_half_width: float = 0.95):
+    min_ttc = float("inf")
     for t, state in zip(log.times, log.states):
+        evx = state.twist.vx * math.cos(state.pose.heading)
+        evy = state.twist.vx * math.sin(state.pose.heading)
         for obs in obstacles_at(t):
-            if not obs.is_dynamic: continue
-            dx = obs.pose.x - state.pose.x
-            dy = obs.pose.y - state.pose.y
+            if not obs.is_dynamic:
+                continue
+            dx, dy = obs.pose.x - state.pose.x, obs.pose.y - state.pose.y
             dist = math.hypot(dx, dy)
-            v_rel = state.twist.vx  # Simplified relative velocity
-            
-            if v_rel > 0.5 and dist > ego_r:
-                # TTC = distance_to_surface / closing_speed
-                clearance = dist - ego_r - max(obs.length, obs.width)/2
-                if clearance > 0:
-                    ttc = clearance / v_rel
-                    min_ttc = min(min_ttc, ttc)
-                    
-    return min_ttc if min_ttc != float('inf') else -1.0
+            if dist < 1e-6:
+                return 0.0
+            ux, uy = dx / dist, dy / dist
+            closing = (evx - obs.velocity.vx) * ux + (evy - obs.velocity.vy) * uy
+            if closing > 0.5:
+                clear = oriented_rect_clearance(state.pose.x, state.pose.y,
+                                                obs.pose.x, obs.pose.y, obs.pose.heading,
+                                                obs.length, obs.width) - ego_half_width
+                if clear > 0:
+                    min_ttc = min(min_ttc, clear / closing)
+    return min_ttc if min_ttc != float("inf") else -1.0

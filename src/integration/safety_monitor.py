@@ -42,13 +42,16 @@ class EnvelopeSafetyMonitor:
                 return self._reject(f"Trajectory exceeds curvature envelope ({pt.curvature:.3f} > {max_curvature:.3f})")
 
         # Predictive collision check (constant-velocity obstacle prediction)
-        ego_r = self.cfg.width / 2.0 + 0.2
+        ego_r = self.cfg.width / 2.0 + 0.2   # ego modeled as circle: conservative vs OBB-OBB (SAT)
+        from src.common.utils.geometry import oriented_rect_clearance
         for pt in trajectory.points:
             for obs in obstacles:
                 px = obs.pose.x + obs.velocity.vx * pt.t
                 py = obs.pose.y + obs.velocity.vy * pt.t
-                r = max(obs.length, obs.width) / 2.0 + ego_r + 0.1
-                if math.hypot(pt.pose.x - px, pt.pose.y - py) < r:
+                clear = oriented_rect_clearance(pt.pose.x, pt.pose.y,
+                                                px, py, obs.pose.heading,
+                                                obs.length, obs.width)
+                if clear < ego_r + 0.1:
                     return self._reject(f"Predicted collision at t={pt.t:.2f}s")
 
         return self._ok()
