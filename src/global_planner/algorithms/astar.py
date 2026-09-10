@@ -1,0 +1,1 @@
+"""A* global planning algorithm."""

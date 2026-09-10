@@ -1,0 +1,1 @@
+"""PathSense application entry point."""

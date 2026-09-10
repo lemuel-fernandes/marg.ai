@@ -1,0 +1,1 @@
+"""Inter-module message bus."""

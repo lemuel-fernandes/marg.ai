@@ -1,0 +1,1 @@
+"""Costmap data types."""
