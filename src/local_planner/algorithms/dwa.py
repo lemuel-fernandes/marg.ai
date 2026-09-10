@@ -89,6 +89,7 @@ class DynamicWindowApproach:
         obstacles: List[Obstacle],
     ) -> Optional[CandidateTrajectory]:
         candidates = self._candidates(state, obstacles)
+        self.last_candidates = candidates 
         if not candidates:
             return None
 

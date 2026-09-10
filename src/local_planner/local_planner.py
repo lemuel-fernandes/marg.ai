@@ -134,6 +134,7 @@ class DWALocalPlanner:
             is_safe=True,
             fallback_active=False,
             reason="dwa optimal candidate",
+            debug_candidates=getattr(self.dwa, 'last_candidates', [])
         )
 
     def emergency_stop(self, state: VehicleState) -> LocalTrajectory:

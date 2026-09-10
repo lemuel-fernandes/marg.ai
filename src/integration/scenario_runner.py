@@ -1,5 +1,5 @@
 import time
-from typing import Callable, List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from src.common.types.base import Pose2D
 from src.common.types.control import ControlCommand
@@ -29,11 +29,20 @@ class ScenarioMetrics:
 
 
 class ScenarioRunner:
-    def __init__(self, pipeline: IntegrationPipeline, dt: float = 0.1):
+    def __init__(self, pipeline: IntegrationPipeline, dt: float = 0.1, on_tick: Optional[Callable] = None):
+        """
+        Runs a deterministic scenario loop.
+        
+        :param pipeline: The integration pipeline to execute.
+        :param dt: Simulation timestep in seconds.
+        :param on_tick: Optional callback(t, state, cmd) triggered after every pipeline tick 
+                        (used by the Live Dashboard).
+        """
         self.pipeline = pipeline
         self.dt = dt
         # (t, state_before_tick, command_issued) for post-run analysis
         self.log: List[Tuple[float, VehicleState, ControlCommand]] = []
+        self.on_tick = on_tick
 
     def run(
         self,
@@ -52,8 +61,10 @@ class ScenarioRunner:
         while current_time <= duration_s:
             t_start = time.perf_counter()
 
+            # 1. Get sensor data for this timestep
             sensor_frame = sensor_provider(current_time)
 
+            # 2. Tick the pipeline
             command = self.pipeline.tick(
                 now=current_time,
                 vehicle_state=current_state,
@@ -61,10 +72,16 @@ class ScenarioRunner:
                 goal=goal,
             )
 
+            # 3. Record metrics
             t_end = time.perf_counter()
             metrics.log_step(command, (t_end - t_start) * 1000)
             self.log.append((current_time, current_state, command))
 
+            # 4. Trigger UI/Telemetry callbacks (Live Dashboard)
+            if self.on_tick:
+                self.on_tick(current_time, current_state, command)
+
+            # 5. Update vehicle state (Simulator physics step)
             current_state = state_updater(current_state, command, self.dt)
             current_time += self.dt
 

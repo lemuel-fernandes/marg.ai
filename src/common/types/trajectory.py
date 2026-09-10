@@ -21,3 +21,4 @@ class LocalTrajectory:
     is_safe: bool = False
     fallback_active: bool = False
     reason: str = ""
+    debug_candidates: list = field(default_factory=list) 

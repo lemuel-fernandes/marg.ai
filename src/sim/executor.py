@@ -1,6 +1,5 @@
 from typing import Optional
 
-from src.sim.metrics import calculate_path_efficiency, calculate_avg_jerk, calculate_min_ttc
 from src.common.coordinates.transforms import TransformTree
 from src.common.types.base import FrameId, Header
 from src.common.types.sensor import SensorFrame
@@ -12,15 +11,17 @@ from src.integration.safety_monitor import EnvelopeSafetyMonitor
 from src.integration.scenario_runner import ScenarioRunner
 from src.local_planner.local_planner import DWALocalPlanner
 from src.mapping.costmap import LocalGridCostmapBuilder
-from src.perception.ground_truth_perception import GroundTruthPerception
 from src.sim.python_sim import PythonSimulator
 from src.sim.scenarios.base import RunLog, Scenario, ScenarioResult
-from src.local_planner.algorithms.dwa import DWA_CODE_VERSION
-from src.local_planner.local_planner import LP_CODE_VERSION
+
+# Advanced Metrics Imports
+from src.sim.metrics import calculate_path_efficiency, calculate_avg_jerk, calculate_min_ttc
+
 
 class ScenarioExecutor:
-    def __init__(self, scenario: Scenario):
+    def __init__(self, scenario: Scenario, live: bool = False):
         self.scenario = scenario
+        self.live = live
 
     def run(self, save_plot: Optional[str] = None) -> ScenarioResult:
         sc = self.scenario
@@ -32,14 +33,14 @@ class ScenarioExecutor:
         tf = TransformTree()
         bus = TypedMessageBus()
         
-        # CHANGED: Capture the LATEST global path. 
-        # This ensures we always have a valid path for deviation calculations,
-        # even if the initial path was blocked and A* had to replan.
         latest_path = {}
         bus.subscribe(Topic.GLOBAL_PATH, lambda p: latest_path.update({"path": p}))
 
+        # Use the scenario's perception module (supports ground truth or noisy)
+        perception_module = sc.get_perception_module(lambda: sc.obstacles_at(clock["t"]))
+
         pipeline = IntegrationPipeline(
-            perception=sc.get_perception_module(lambda: sc.obstacles_at(clock["t"])),
+            perception=perception_module,
             costmap_builder=LocalGridCostmapBuilder(c_cfg),
             global_planner=AStarGlobalPlanner(target_speed=v_cfg.max_speed),
             local_planner=DWALocalPlanner(v_cfg, dwa_cfg),
@@ -48,8 +49,19 @@ class ScenarioExecutor:
             transform_tree=tf,
             message_bus=bus,
         )
-        print(f"[CODE] executor built pipeline with dwa={DWA_CODE_VERSION} lp={LP_CODE_VERSION}")
-        runner = ScenarioRunner(pipeline, dt=0.1)
+
+        # Setup Dashboard if live=True
+        dashboard = None
+        if self.live:
+            from src.dashboard.live_dashboard import LiveDashboard
+            dashboard = LiveDashboard(bus)
+
+        def on_tick(t, state, cmd):
+            if dashboard:
+                dashboard.tick(state)
+
+        # Pass the on_tick callback to the ScenarioRunner
+        runner = ScenarioRunner(pipeline, dt=0.1, on_tick=on_tick)
 
         def get_sensor(t: float) -> SensorFrame:
             clock["t"] = t  # perception reads the same sim clock
@@ -67,11 +79,13 @@ class ScenarioExecutor:
             times=[e[0] for e in runner.log],
             states=[e[1] for e in runner.log],
             commands=[e[2] for e in runner.log],
-            global_path=latest_path.get("path"),  # <--- CHANGED
+            global_path=latest_path.get("path"),
             emergency_stops=metrics.emergency_stops,
         )
 
         result = sc.evaluate(log, v_cfg)
+
+        # --- Advanced Metrics ---
         path_eff = calculate_path_efficiency(log)
         avg_jerk = calculate_avg_jerk(log)
         min_ttc = calculate_min_ttc(log, sc.obstacles_at)
@@ -87,9 +101,6 @@ class ScenarioExecutor:
                 print(f"    {k}: {v:.2%}")
             else:
                 print(f"    {k}: {v:.2f}")
-        print(f"[Scenario:{result.name}] {'PASS' if result.passed else 'FAIL'}")
-        for k, v in result.metrics.items():
-            print(f"    {k}: {v:.2f}")
         for f in result.failures:
             print(f"    FAILURE: {f}")
 
