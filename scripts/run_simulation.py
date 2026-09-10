@@ -7,16 +7,15 @@ from src.common.types.obstacle import Obstacle, ObstacleBehavior, ObstacleClass
 from src.common.types.sensor import SensorFrame
 from src.common.types.trajectory import LocalTrajectory
 from src.common.types.vehicle_state import VehicleState
-from src.integration.mocks import MockController, MockGlobalPlanner, MockPerception
 from src.integration.pipeline import IntegrationPipeline
 from src.integration.safety_monitor import EnvelopeSafetyMonitor
 from src.integration.scenario_runner import ScenarioRunner
-from src.integration.system_runner import build_pipeline
 from src.mapping.costmap import LocalGridCostmapBuilder
 from src.sim.python_sim import PythonSimulator
 from src.common.coordinates.transforms import TransformTree
 from src.integration.message_bus import TypedMessageBus
-
+from src.global_planner.planner import AStarGlobalPlanner
+from src.integration.mocks import MockController, MockPerception
 
 class GoToGoalLocalPlanner:
     """
@@ -51,28 +50,35 @@ class GoToGoalLocalPlanner:
 
 
 def main():
-    print("=== Starting Sprint 1 End-to-End Simulation ===")
+    print("=== Starting Sprint 2 (Global Planner) End-to-End Simulation ===")
     
     # 1. Setup Configs
     v_cfg = VehicleConfig(max_speed=8.0, max_steer_angle=0.6, wheelbase=2.5)
-    c_cfg = CostmapConfig(width_m=40, height_m=40, resolution=0.5, inflation_radius=1.5)
+    
+    # FIX: Expand the costmap to 100x100 meters. 
+    # This ensures the 40x40m rolling window is large enough to "see" the goal at X=25 
+    # while the car is at X=0.
+    c_cfg = CostmapConfig(width_m=100, height_m=100, resolution=0.5, inflation_radius=2.0)
     p_cfg = PlannerConfig()
     
     # 2. Setup Pipeline
     tf = TransformTree()
     bus = TypedMessageBus()
     
-    # We use mocks for Perception and Global Planner for now
+    # Instantiate the real A* Planner
+    real_global_planner = AStarGlobalPlanner(target_speed=v_cfg.max_speed)
+
     pipeline = IntegrationPipeline(
         perception=MockPerception(),
         costmap_builder=LocalGridCostmapBuilder(c_cfg),
-        global_planner=MockGlobalPlanner(),
-        local_planner=GoToGoalLocalPlanner(), # Inject our simple Go-To-Goal
+        global_planner=real_global_planner,
+        local_planner=GoToGoalLocalPlanner(), 
         controller=MockController(),
         safety_monitor=EnvelopeSafetyMonitor(v_cfg),
         transform_tree=tf,
         message_bus=bus
     )
+    
     
     # 3. Setup Simulator
     sim = PythonSimulator(v_cfg)
@@ -118,7 +124,7 @@ def main():
     )
 
     # 7. Visualize
-    sim.plot_run(goal.x, goal.y, save_path="sprint1_demo.png")
+    sim.plot_run(goal.x, goal.y, save_path="sprint2_demo_astar.png")
     print("=== Simulation Complete ===")
 
 if __name__ == "__main__":
