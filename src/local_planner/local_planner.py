@@ -21,19 +21,36 @@ class DWALocalPlanner:
         self.dwa = DynamicWindowApproach(vehicle_cfg, dwa_cfg)
         self.vcfg = vehicle_cfg
         self.cfg = dwa_cfg
+        self._arrived = False
+        self._latched_goal = None
 
     def _lookahead_target(self, state: VehicleState, global_path: GlobalPath):
         pts = global_path.points
         goal = pts[-1].pose
+        dist_goal = math.hypot(goal.x - state.pose.x, goal.y - state.pose.y)
 
-        if math.hypot(goal.x - state.pose.x, goal.y - state.pose.y) < self.cfg.arrival_radius_m:
-            return goal, 0.0  # arrive: stop at goal
+        # Reset latch if a new goal was issued
+        if self._latched_goal is None or math.hypot(
+            goal.x - self._latched_goal.x, goal.y - self._latched_goal.y
+        ) > 1e-6:
+            self._arrived = False
+            self._latched_goal = goal
 
-        # nearest path index
+        if dist_goal < self.cfg.arrival_radius_m:
+            self._arrived = True
+
+        if self._arrived:
+            return goal, 0.0   # stay stopped; no re-acceleration, no orbit
+
+        # Braking ramp: max speed from which we can still stop comfortably
+        # v_allow = sqrt(2 * a_comfort * remaining_distance)
+        a_comfort = 2.0
+        speed_cap = math.sqrt(2.0 * a_comfort * max(dist_goal - 0.3, 0.0))
+
+        # nearest path index, then walk forward to lookahead distance
         nearest = min(range(len(pts)), key=lambda i: math.hypot(
             pts[i].pose.x - state.pose.x, pts[i].pose.y - state.pose.y))
 
-        # walk forward to lookahead distance
         acc = 0.0
         target = pts[nearest].pose
         speed = pts[nearest].target_speed
@@ -44,7 +61,8 @@ class DWALocalPlanner:
             speed = pts[i+1].target_speed
             if acc >= self.cfg.lookahead_m:
                 break
-        return target, speed
+
+        return target, min(speed, speed_cap)
 
     def plan(self, state, global_path: GlobalPath, costmap: Costmap, obstacles: List[Obstacle]) -> LocalTrajectory:
         target, speed = self._lookahead_target(state, global_path)

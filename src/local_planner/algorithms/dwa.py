@@ -79,13 +79,23 @@ class DynamicWindowApproach:
         if not candidates:
             return None
 
+        # Arrival mode: the planner is asking us to stop (target_speed ~ 0).
+        arrival_mode = target_speed < 0.3
+
         heading_raw, clear_raw, vel_raw = [], [], []
         for c in candidates:
             fx, fy, fth, _ = c.points[-1]
             desired = math.atan2(target_pose.y - fy, target_pose.x - fx)
             heading_raw.append(math.cos(normalize_angle(desired - fth)))
             clear_raw.append(min(c.min_clearance, self.cfg.clearance_cap_m) / self.cfg.clearance_cap_m)
-            vel_raw.append(min(c.v, max(target_speed, 0.5)) / max(target_speed, 0.5))
+
+            if arrival_mode:
+                # Arrival mode: reward SLOW candidates instead of fast ones.
+                # v=0 scores 1.0, v>=1.0 scores 0.0.
+                vel_raw.append(max(0.0, 1.0 - c.v / 1.0))
+            else:
+                # Cruising mode: reward matching the requested target speed.
+                vel_raw.append(min(c.v, target_speed) / target_speed)
 
         def norm(vals):
             lo, hi = min(vals), max(vals)
@@ -93,7 +103,6 @@ class DynamicWindowApproach:
 
         hn, cn, vn = norm(heading_raw), norm(clear_raw), norm(vel_raw)
 
-        best_idx, best_score = 0, -float("inf")
         scores = []
         for i, c in enumerate(candidates):
             score = (
@@ -103,7 +112,8 @@ class DynamicWindowApproach:
             )
             # Progress bias: standing still is only acceptable if everything
             # moving is significantly worse (i.e., genuinely blocked).
-            if c.v < 0.3 and target_speed > 0.3:
+            # Disabled in arrival mode, where stopping IS the goal.
+            if c.v < 0.3 and not arrival_mode:
                 score -= self.cfg.stall_penalty
             scores.append(score)
 
