@@ -1,131 +1,80 @@
-import math
-
-from src.common.types.base import FrameId, Header, Pose2D, Twist2D, Covariance2D
-from src.common.types.config import CostmapConfig, PlannerConfig, VehicleConfig
+from src.common.coordinates.transforms import TransformTree
+from src.common.types.base import Covariance2D, FrameId, Header, Pose2D, Twist2D
+from src.common.types.config import CostmapConfig, DWAConfig, PlannerConfig, VehicleConfig
 from src.common.types.control import ControlCommand
 from src.common.types.obstacle import Obstacle, ObstacleBehavior, ObstacleClass
+from src.common.types.path import GlobalPath
 from src.common.types.sensor import SensorFrame
-from src.common.types.trajectory import LocalTrajectory
 from src.common.types.vehicle_state import VehicleState
+from src.controller.controllers.pure_pursuit import PurePursuitController
+from src.integration.message_bus import Topic, TypedMessageBus
 from src.integration.pipeline import IntegrationPipeline
 from src.integration.safety_monitor import EnvelopeSafetyMonitor
 from src.integration.scenario_runner import ScenarioRunner
+from src.local_planner.local_planner import DWALocalPlanner
 from src.mapping.costmap import LocalGridCostmapBuilder
+from src.perception.ground_truth_perception import GroundTruthPerception
 from src.sim.python_sim import PythonSimulator
-from src.common.coordinates.transforms import TransformTree
-from src.integration.message_bus import TypedMessageBus
-from src.global_planner.planner import AStarGlobalPlanner
-from src.integration.mocks import MockController, MockPerception
-
-class GoToGoalLocalPlanner:
-    """
-    Sprint 1 Dummy Local Planner.
-    Just points the car at the goal to prove the pipeline moves.
-    M4 will replace this with DWA/MPC in Sprint 2.
-    """
-    def plan(self, state, global_path, costmap, obstacles):
-        goal = global_path.points[-1].pose
-        dx = goal.x - state.pose.x
-        dy = goal.y - state.pose.y
-        target_heading = math.atan2(dy, dx)
-        
-        # Simple P-controller for steering
-        heading_error = target_heading - state.pose.heading
-        heading_error = (heading_error + math.pi) % (2 * math.pi) - math.pi
-        
-        steer = max(-0.5, min(0.5, heading_error * 1.5))
-        
-        from src.common.types.trajectory import TrajectoryPoint
-        pt = TrajectoryPoint(
-            t=0.1, pose=state.pose, twist=Twist2D(vx=5.0), curvature=0.0, acceleration=0.5
-        )
-        return LocalTrajectory(
-            header=Header(state.header.stamp, FrameId.MAP, "goto_goal"),
-            points=[pt], is_safe=True
-        )
-
-    def emergency_stop(self, state):
-        from src.integration.mocks import MockLocalPlanner
-        return MockLocalPlanner(PlannerConfig(), VehicleConfig()).emergency_stop(state)
 
 
 def main():
-    print("=== Starting Sprint 2 (Global Planner) End-to-End Simulation ===")
-    
-    # 1. Setup Configs
+    print("=== Sprint 2: A* + DWA + Pure Pursuit End-to-End ===")
+
     v_cfg = VehicleConfig(max_speed=8.0, max_steer_angle=0.6, wheelbase=2.5)
-    
-    # FIX: Expand the costmap to 100x100 meters. 
-    # This ensures the 40x40m rolling window is large enough to "see" the goal at X=25 
-    # while the car is at X=0.
     c_cfg = CostmapConfig(width_m=100, height_m=100, resolution=0.5, inflation_radius=2.0)
-    p_cfg = PlannerConfig()
-    
-    # 2. Setup Pipeline
+    dwa_cfg = DWAConfig()
+
+    sim = PythonSimulator(v_cfg)
+
+    # World-fixed obstacle directly in the driving lane
+    dummy_obs = Obstacle(
+        header=Header(0.0, FrameId.MAP, "sim"), track_id=99,
+        class_label=ObstacleClass.ANIMAL, behavior=ObstacleBehavior.STATIC,
+        pose=Pose2D(12.0, 1.0, 0.0), length=2.0, width=2.0,
+        velocity=Twist2D(), pose_covariance=Covariance2D(), velocity_covariance=Covariance2D(),
+        confidence=1.0, is_dynamic=False,
+    )
+    sim.set_obstacles([dummy_obs])
+
     tf = TransformTree()
     bus = TypedMessageBus()
-    
-    # Instantiate the real A* Planner
-    real_global_planner = AStarGlobalPlanner(target_speed=v_cfg.max_speed)
+
+    latest_global_path = {}
+    bus.subscribe(Topic.GLOBAL_PATH, lambda p: latest_global_path.update(path=p))
 
     pipeline = IntegrationPipeline(
-        perception=MockPerception(),
+        perception=GroundTruthPerception(lambda: sim.obstacles),
         costmap_builder=LocalGridCostmapBuilder(c_cfg),
-        global_planner=real_global_planner,
-        local_planner=GoToGoalLocalPlanner(), 
-        controller=MockController(),
+        global_planner=__import__("src.global_planner.planner", fromlist=["AStarGlobalPlanner"]).AStarGlobalPlanner(target_speed=v_cfg.max_speed),
+        local_planner=DWALocalPlanner(v_cfg, dwa_cfg),
+        controller=PurePursuitController(v_cfg),
         safety_monitor=EnvelopeSafetyMonitor(v_cfg),
         transform_tree=tf,
-        message_bus=bus
+        message_bus=bus,
     )
-    
-    
-    # 3. Setup Simulator
-    sim = PythonSimulator(v_cfg)
+
     runner = ScenarioRunner(pipeline, dt=0.1)
-    
-    # 4. Define Scenario
+
     start_state = VehicleState(
         header=Header(0.0, FrameId.MAP, "sim"),
         pose=Pose2D(0.0, 0.0, 0.0),
         twist=Twist2D(5.0, 0.0, 0.0),
-        steering_angle=0.0
+        steering_angle=0.0,
     )
-    goal = Pose2D(25.0, 5.0, 0.0) # Goal is slightly to the left
-    
-    # Inject an obstacle directly into the simulator for plotting
-    dummy_obs = Obstacle(
-        header=Header(0.0, FrameId.MAP, "sim"), track_id=99,
-        class_label=ObstacleClass.ANIMAL, behavior=ObstacleBehavior.STATIC,
-        pose=Pose2D(12.0, 2.0, 0.0), length=2.0, width=2.0,
-        velocity=Twist2D(), pose_covariance=Covariance2D(), velocity_covariance=Covariance2D(),
-        confidence=1.0, is_dynamic=False
-    )
-    sim.set_obstacles([dummy_obs])
+    goal = Pose2D(25.0, 5.0, 0.0)
 
-    # 5. Define Sensor & State Updater callbacks for the ScenarioRunner
-    def get_sensor(t):
-        # In a real sim, this would query CARLA/Gazebo. 
-        # Here we just return a blank frame because MockPerception ignores it 
-        # and always returns our hardcoded dummy obstacle.
-        return SensorFrame(header=Header(t, FrameId.SENSOR_FRONT, "sim"))
-
-    def update_physics(state: VehicleState, cmd: ControlCommand, dt: float):
-        return sim.step(state, cmd, dt)
-
-    # 6. Run!
-    print("Running scenario for 10 seconds...")
     metrics = runner.run(
         initial_state=start_state,
         goal=goal,
-        sensor_provider=get_sensor,
-        state_updater=update_physics,
-        duration_s=10.0
+        sensor_provider=lambda t: SensorFrame(header=Header(t, FrameId.SENSOR_FRONT, "sim")),
+        state_updater=lambda s, c, dt: sim.step(s, c, dt),
+        duration_s=12.0,
     )
 
-    # 7. Visualize
-    sim.plot_run(goal.x, goal.y, save_path="sprint2_demo_astar.png")
+    sim.plot_run(goal.x, goal.y, save_path="sprint2_dwa_demo.png",
+                 global_path=latest_global_path.get("path"))
     print("=== Simulation Complete ===")
+
 
 if __name__ == "__main__":
     main()

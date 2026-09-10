@@ -27,3 +27,19 @@ class PlannerConfig:
     local_horizon_s: float = 3.0
     local_dt: float = 0.1
     target_speed: float = 5.0
+    
+    
+@dataclass(frozen=True)
+class DWAConfig:
+    horizon_s: float = 2.5
+    dt: float = 0.1
+    v_samples: int = 7
+    yaw_rate_samples: int = 11
+    max_yaw_rate: float = 0.8
+    heading_weight: float = 1.0
+    clearance_weight: float = 2.0
+    velocity_weight: float = 0.5
+    obstacle_margin: float = 1.5     # must be stricter than safety monitor
+    lookahead_m: float = 6.0
+    arrival_radius_m: float = 2.0
+    clearance_cap_m: float = 5.0
