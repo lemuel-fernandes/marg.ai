@@ -1,5 +1,6 @@
 from typing import Optional
 
+from src.sim.metrics import calculate_path_efficiency, calculate_avg_jerk, calculate_min_ttc
 from src.common.coordinates.transforms import TransformTree
 from src.common.types.base import FrameId, Header
 from src.common.types.sensor import SensorFrame
@@ -71,7 +72,21 @@ class ScenarioExecutor:
         )
 
         result = sc.evaluate(log, v_cfg)
+        path_eff = calculate_path_efficiency(log)
+        avg_jerk = calculate_avg_jerk(log)
+        min_ttc = calculate_min_ttc(log, sc.obstacles_at)
+        
+        result.metrics["path_efficiency"] = path_eff
+        result.metrics["avg_jerk_mps3"] = avg_jerk
+        if min_ttc > 0:
+            result.metrics["min_ttc_s"] = min_ttc
 
+        print(f"[Scenario:{result.name}] {'PASS' if result.passed else 'FAIL'}")
+        for k, v in result.metrics.items():
+            if "efficiency" in k:
+                print(f"    {k}: {v:.2%}")
+            else:
+                print(f"    {k}: {v:.2f}")
         print(f"[Scenario:{result.name}] {'PASS' if result.passed else 'FAIL'}")
         for k, v in result.metrics.items():
             print(f"    {k}: {v:.2f}")
