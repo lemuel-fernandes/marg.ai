@@ -1,35 +1,42 @@
-"""Obstacle data types."""
-
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
-class ObstacleType(Enum):
-    STATIC = "static"
-    DYNAMIC = "dynamic"
+from .base import Header, Pose2D, Twist2D, Covariance2D
 
-class ObstacleClass(Enum):
+
+class ObstacleClass(str, Enum):
     UNKNOWN = "unknown"
     VEHICLE = "vehicle"
     PEDESTRIAN = "pedestrian"
-    ANIMAL = "animal"       # Cows, dogs, goats (Crucial for Indian roads)
-    POTHOle = "pothole"
-    ENCROACHMENT = "encroachment" # Carts, stalls, parked autos
+    ANIMAL = "animal"
+    POTHOLE = "pothole"
+    ENCROACHMENT = "encroachment"
+    PARKED_VEHICLE = "parked_vehicle"
+    TWO_WHEELER = "two_wheeler"
 
-@dataclass
-class BoundingBox:
-    x: float          # Center X in global frame (meters)
-    y: float          # Center Y in global frame (meters)
-    width: float      # meters
-    height: float     # meters
-    heading: float = 0.0  # radians
+
+class ObstacleBehavior(str, Enum):
+    UNKNOWN = "unknown"
+    STATIC = "static"
+    CROSSING = "crossing"
+    WEAVING = "weaving"
+    STOPPING = "stopping"
+    PARKED = "parked"
+    DRIFTING = "drifting"
+    ONCOMING_WRONG_SIDE = "oncoming_wrong_side"
+
 
 @dataclass
 class Obstacle:
-    id: int
-    obstacle_type: ObstacleType
-    obstacle_class: ObstacleClass
-    bbox: BoundingBox
-    velocity_x: float = 0.0   # m/s
-    velocity_y: float = 0.0   # m/s
-    confidence: float = 1.0   # 0.0 to 1.0
+    header: Header
+    track_id: int
+    class_label: ObstacleClass
+    behavior: ObstacleBehavior
+    pose: Pose2D
+    length: float
+    width: float
+    velocity: Twist2D
+    pose_covariance: Covariance2D
+    velocity_covariance: Covariance2D
+    confidence: float
+    is_dynamic: bool

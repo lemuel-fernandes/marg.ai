@@ -1,24 +1,23 @@
-"""Trajectory data types."""
-
-
 from dataclasses import dataclass, field
 from typing import List
-from .vehicle_state import VehicleState
 
-@dataclass
-class ControlCommand:
-    steering_angle: float  # radians
-    throttle: float        # 0.0 to 1.0
-    brake: float           # 0.0 to 1.0
+from .base import Header, Pose2D, Twist2D
+
 
 @dataclass
 class TrajectoryPoint:
-    state: VehicleState
-    control: ControlCommand
-    time_from_start: float # seconds
+    t: float                    # relative time from now
+    pose: Pose2D
+    twist: Twist2D
+    curvature: float
+    acceleration: float
+
 
 @dataclass
 class LocalTrajectory:
+    header: Header
     points: List[TrajectoryPoint] = field(default_factory=list)
-    cost: float = 0.0
-    is_safe: bool = True
+    cost: float = float("inf")
+    is_safe: bool = False
+    fallback_active: bool = False
+    reason: str = ""

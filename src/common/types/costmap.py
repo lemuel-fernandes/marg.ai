@@ -1,14 +1,17 @@
-"""Costmap data types."""
-
-
 from dataclasses import dataclass
+
 import numpy as np
+
+from .base import Header
+
 
 @dataclass
 class Costmap:
-    data: np.ndarray      # 2D numpy array of costs (0.0 = free, 1.0 = lethal)
-    resolution: float     # meters per pixel
-    origin_x: float       # Global X of the bottom-left corner
-    origin_y: float       # Global Y of the bottom-left corner
-    width: int            # Number of cells in X
-    height: int           # Number of cells in Y
+    header: Header
+    data: np.ndarray       # 2D cost grid: 0.0 free, 1.0 lethal
+    resolution: float      # meters / cell
+    origin_x: float
+    origin_y: float
+    width: int
+    height: int
+    inflation_radius: float

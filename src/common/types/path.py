@@ -1,17 +1,21 @@
-"""Path data types."""
-
 from dataclasses import dataclass, field
 from typing import List
 
+from .base import Header, Pose2D
+
+
 @dataclass
-class Waypoint:
-    x: float
-    y: float
-    heading: float
-    target_speed: float   # m/s
+class PathPoint:
+    pose: Pose2D
+    curvature: float
+    target_speed: float
+
 
 @dataclass
 class GlobalPath:
-    waypoints: List[Waypoint] = field(default_factory=list)
-    is_valid: bool = True
-    replan_reason: str = ""
+    header: Header
+    points: List[PathPoint] = field(default_factory=list)
+    length_m: float = 0.0
+    is_feasible: bool = False
+    replan_required: bool = False
+    reason: str = ""
