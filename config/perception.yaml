@@ -1,0 +1,4 @@
+perception:
+  sensor_frame: base_link
+  tracking_timeout_s: 1.0
+  confidence_threshold: 0.5

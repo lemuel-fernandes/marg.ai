@@ -1,0 +1,3 @@
+safety:
+  minimum_clearance_m: 0.5
+  emergency_time_to_collision_s: 1.5
