@@ -1,4 +1,4 @@
-# <p align="center">MARG>AI</p>
+# <p align="center">MARG.AI</p>
 <h2 align="center">Adaptive Path Planning & Collision Avoidance for Autonomous Vehicles on Unstructured Indian Roads 🇮🇳</h2>
 <hr>
 <h2 align="center">TEAM SARVOTTAM — Smart India Hackathon 2026 🌟</h2>
