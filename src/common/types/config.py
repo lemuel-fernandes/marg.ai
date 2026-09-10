@@ -1,0 +1,29 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class VehicleConfig:
+    length: float = 4.2
+    width: float = 1.9
+    wheelbase: float = 2.7
+    max_steer_angle: float = 0.6
+    max_steer_rate: float = 0.35
+    max_acceleration: float = 2.0
+    min_acceleration: float = -3.5
+    max_speed: float = 15.0
+
+
+@dataclass(frozen=True)
+class CostmapConfig:
+    width_m: float = 60.0
+    height_m: float = 60.0
+    resolution: float = 0.25
+    inflation_radius: float = 0.75
+
+
+@dataclass(frozen=True)
+class PlannerConfig:
+    global_replan_distance_m: float = 2.0
+    local_horizon_s: float = 3.0
+    local_dt: float = 0.1
+    target_speed: float = 5.0

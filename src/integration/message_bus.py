@@ -1,5 +1,3 @@
-"""Inter-module message bus."""
-
 from collections import defaultdict
 from typing import Any, Callable, Dict, List
 

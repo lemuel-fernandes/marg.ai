@@ -15,7 +15,7 @@ class FrameId(str, Enum):
 
 @dataclass
 class Header:
-    stamp: float                  # simulation time in seconds
+    stamp: float
     frame_id: FrameId
     source: str
     seq: int = 0

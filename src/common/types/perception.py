@@ -9,3 +9,5 @@ from .obstacle import Obstacle
 class PerceptionOutput:
     header: Header
     obstacles: List[Obstacle] = field(default_factory=list)
+    latency_ms: float = 0.0
+    status: str = "OK"

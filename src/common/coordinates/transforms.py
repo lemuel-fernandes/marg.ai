@@ -1,13 +1,21 @@
-"""Coordinate transformations."""
-
 from dataclasses import replace
 from typing import List
 
 import numpy as np
 
-from src.common.types.base import FrameId, Header, Pose2D, Twist2D, normalize_angle
+from src.common.types.base import (
+    FrameId,
+    Header,
+    Pose2D,
+    Twist2D,
+    normalize_angle,
+)
 from src.common.types.obstacle import Obstacle
 from src.common.types.vehicle_state import VehicleState
+
+
+class TransformError(RuntimeError):
+    pass
 
 
 class TransformTree:
@@ -27,7 +35,7 @@ class TransformTree:
 
     def obstacles_to_map(self, obstacles: List[Obstacle]) -> List[Obstacle]:
         if self._ego_state is None:
-            raise RuntimeError("Ego state not available for transforms.")
+            raise TransformError("Ego state not available for transforms.")
 
         transformed: List[Obstacle] = []
         for obs in obstacles:
@@ -36,7 +44,7 @@ class TransformTree:
             elif obs.header.frame_id == FrameId.VEHICLE:
                 transformed.append(self._obstacle_vehicle_to_map(obs))
             else:
-                raise NotImplementedError(
+                raise TransformError(
                     f"No transform implemented for frame {obs.header.frame_id}"
                 )
         return transformed

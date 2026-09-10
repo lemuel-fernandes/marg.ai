@@ -1,30 +1,15 @@
 from typing import List, Optional, Protocol, runtime_checkable
 
-from src.common.types.costmap import Costmap
-from src.common.types.control import ControlCommand
 from src.common.types.base import Pose2D
+from src.common.types.control import ControlCommand
+from src.common.types.costmap import Costmap
 from src.common.types.obstacle import Obstacle
 from src.common.types.path import GlobalPath
 from src.common.types.perception import PerceptionOutput
+from src.common.types.safety import SafetyDecision
 from src.common.types.sensor import SensorFrame
 from src.common.types.trajectory import LocalTrajectory
 from src.common.types.vehicle_state import VehicleState
-
-
-class SafetyDecision:
-    def __init__(
-        self,
-        allowed: bool,
-        reason: str,
-        max_acceleration: float,
-        min_acceleration: float,
-        max_abs_steer: float,
-    ):
-        self.allowed = allowed
-        self.reason = reason
-        self.max_acceleration = max_acceleration
-        self.min_acceleration = min_acceleration
-        self.max_abs_steer = max_abs_steer
 
 
 @runtime_checkable
@@ -40,6 +25,7 @@ class CostmapBuilder(Protocol):
         obstacles: List[Obstacle],
         previous_costmap: Optional[Costmap],
         stamp: float,
+        ego_pose: Pose2D,
     ) -> Costmap:
         ...
 
