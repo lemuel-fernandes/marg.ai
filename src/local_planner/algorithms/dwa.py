@@ -41,21 +41,51 @@ class DynamicWindowApproach:
         return pts
 
     def _min_clearance(self, pts, obstacles: List[Obstacle]) -> float:
-        """Min distance from rollout points to *predicted* obstacle positions."""
+        """Min distance from rollout points to *predicted* obstacle positions.
+
+        Obstacles are treated as oriented rectangles (length along the
+        obstacle's own heading, width perpendicular to it) rather than a
+        circle sized by the longest dimension. A circle-of-longest-side model
+        makes long, narrow obstacles (a 6m truck, a curb segment) look far
+        wider than they are, which can make normal-width roads geometrically
+        impossible to pass on.
+        """
         min_clear = float("inf")
         for (x, y, _, t) in pts:
             for obs in obstacles:
                 px = obs.pose.x + obs.velocity.vx * t
                 py = obs.pose.y + obs.velocity.vy * t
-                r = max(obs.length, obs.width) / 2.0
-                min_clear = min(min_clear, math.hypot(x - px, y - py) - r)
+
+                dx = x - px
+                dy = y - py
+                cos_h = math.cos(obs.pose.heading)
+                sin_h = math.sin(obs.pose.heading)
+
+                # Rotate the query point into the obstacle's local frame:
+                # local_x is along the obstacle's heading (its "length" axis),
+                # local_y is perpendicular to it (its "width" axis).
+                local_x = dx * cos_h + dy * sin_h
+                local_y = -dx * sin_h + dy * cos_h
+
+                half_len = obs.length / 2.0
+                half_wid = obs.width / 2.0
+
+                clear_x = abs(local_x) - half_len
+                clear_y = abs(local_y) - half_wid
+
+                if clear_x <= 0.0 and clear_y <= 0.0:
+                    # Query point falls inside the obstacle's footprint.
+                    dist = 0.0
+                else:
+                    dist = math.hypot(max(clear_x, 0.0), max(clear_y, 0.0))
+
+                min_clear = min(min_clear, dist)
         return min_clear
 
-    def _candidates(self, state: VehicleState, obstacles: List[Obstacle]) -> List[CandidateTrajectory]:
+    def _candidates(self, state: VehicleState, obstacles: List[Obstacle], costmap=None) -> List[CandidateTrajectory]:
         v_cur = state.twist.vx
-        v_lo = max(0.0, v_cur - self.vcfg.max_acceleration * self.cfg.horizon_s)
-        v_hi = min(self.vcfg.max_speed, v_cur + self.vcfg.max_acceleration * self.cfg.horizon_s)
-
+        v_lo = max(0.0, v_cur - self.vcfg.max_acceleration * self.cfg.dt)
+        v_hi = min(self.vcfg.max_speed, v_cur + self.vcfg.max_acceleration * self.cfg.dt)
         candidates: List[CandidateTrajectory] = []
         for i in range(self.cfg.v_samples):
             v = v_lo + (v_hi - v_lo) * i / max(1, self.cfg.v_samples - 1)
@@ -68,6 +98,9 @@ class DynamicWindowApproach:
                     continue
 
                 pts = self._roll_out(state, v, wr)
+                is_lethal, _ = self._costmap_check(pts, costmap)
+                if is_lethal:
+                  continue
                 clear = self._min_clearance(pts, obstacles)
                 if clear < self.cfg.obstacle_margin:
                     continue  # collision candidate: reject
@@ -75,20 +108,39 @@ class DynamicWindowApproach:
 
         # Always offer a full stop as a safe fallback candidate
         stop_pts = self._roll_out(state, 0.0, 0.0)
-        stop_clear = self._min_clearance(stop_pts, obstacles)
-        if stop_clear >= self.cfg.obstacle_margin:
-            candidates.append(CandidateTrajectory(v=0.0, yaw_rate=0.0, points=stop_pts, min_clearance=stop_clear))
+        is_lethal, _ = self._costmap_check(stop_pts, costmap)
 
+        stop_clear = self._min_clearance(stop_pts, obstacles)
+        if not is_lethal and stop_clear >= self.cfg.obstacle_margin:
+            candidates.append(CandidateTrajectory(v=0.0, yaw_rate=0.0, points=stop_pts, min_clearance=stop_clear))
         return candidates
+    def _costmap_check(self, pts, costmap) -> Tuple[bool, float]:
+        """Returns (is_lethal, max_cost) for a rollout against the road-boundary costmap."""
+        if costmap is None:
+            return False, 0.0
+        lethal_threshold = getattr(self.cfg, "lethal_threshold", 0.9)
+        max_cost = 0.0
+        for (x, y, _, _t) in pts:
+            col = int(round((x - costmap.origin_x) / costmap.resolution))
+            row = int(round((y - costmap.origin_y) / costmap.resolution))
+            if not (0 <= row < costmap.height and 0 <= col < costmap.width):
+                return True, 1.0  # outside known local grid — treat as unsafe, not free
+            cell_cost = float(costmap.data[row, col])
+            max_cost = max(max_cost, cell_cost)
+            if cell_cost >= lethal_threshold:
+                return True, cell_cost
+        return False, max_cost
 
     def plan(
         self,
         state: VehicleState,
         target_pose: Pose2D,
         target_speed: float,
+        
         obstacles: List[Obstacle],
+        costmap: Optional["Costmap"] = None,
     ) -> Optional[CandidateTrajectory]:
-        candidates = self._candidates(state, obstacles)
+        candidates = self._candidates(state, obstacles,costmap)
         self.last_candidates = candidates 
         if not candidates:
             return None

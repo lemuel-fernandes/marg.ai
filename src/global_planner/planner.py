@@ -34,22 +34,21 @@ class AStarGlobalPlanner(GlobalPlanner):
         y = costmap.origin_y + (row * costmap.resolution)
         return Pose2D(x=x, y=y, heading=0.0)
 
-    def _downsample_path(self, grid_path: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
-        """Simple distance-based downsampling to prevent thousands of micro-waypoints."""
+    def _downsample_path(self, grid_path: List[Tuple[int, int]], resolution: float) -> List[Tuple[int, int]]:
         if len(grid_path) <= 2:
             return grid_path
-            
+
         downsampled = [grid_path[0]]
-        min_dist_sq = (self.path_downsample_dist / 1.0) ** 2  # rough grid units
-        
+        min_dist_sq = (self.path_downsample_dist / resolution) ** 2
+
         for i in range(1, len(grid_path) - 1):
             last = downsampled[-1]
             curr = grid_path[i]
             dist_sq = (curr[0] - last[0])**2 + (curr[1] - last[1])**2
             if dist_sq >= min_dist_sq:
                 downsampled.append(curr)
-                
-        downsampled.append(grid_path[-1]) # Always keep goal
+
+        downsampled.append(grid_path[-1])
         return downsampled
 
     def plan(self, costmap: Costmap, start: Pose2D, goal: Pose2D) -> GlobalPath:
@@ -81,7 +80,7 @@ class AStarGlobalPlanner(GlobalPlanner):
             )
 
         # Downsample and convert back to meters
-        grid_path = self._downsample_path(grid_path)
+        grid_path = self._downsample_path(grid_path, costmap.resolution)
         path_points: List[PathPoint] = []
         total_length = 0.0
 

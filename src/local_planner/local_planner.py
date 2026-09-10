@@ -102,7 +102,7 @@ class DWALocalPlanner:
 
     def plan(self, state, global_path: GlobalPath, costmap: Costmap, obstacles: List[Obstacle]) -> LocalTrajectory:
         target, speed = self._lookahead_target(state, global_path)
-        best = self.dwa.plan(state, target, speed, obstacles)
+        best = self.dwa.plan(state, target, speed, obstacles, costmap)
 
         if best is None:
             return self.emergency_stop(state)
