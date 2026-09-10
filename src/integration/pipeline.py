@@ -110,8 +110,9 @@ class IntegrationPipeline:
                 raise IntegrationFault("Global path unavailable")
 
             if not self._current_global_path.is_feasible:
-                raise IntegrationFault("Global path infeasible")
-
+                # Do not fault the pipeline; just issue a stop command and wait for replan
+                return self._emergency_stop_command(now, vehicle_state, "Global path temporarily blocked")
+      
             # 4. Local planning
             local_traj = self.local_planner.plan(
                 state=vehicle_state,

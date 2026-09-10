@@ -1,5 +1,5 @@
 import time
-from typing import Callable, List
+from typing import Callable, List, Tuple
 
 from src.common.types.base import Pose2D
 from src.common.types.control import ControlCommand
@@ -13,7 +13,7 @@ class ScenarioMetrics:
         self.steps = 0
         self.replans = 0
         self.emergency_stops = 0
-        self.latency_ms = []
+        self.latency_ms: List[float] = []
 
     def log_step(self, cmd: ControlCommand, latency: float):
         self.steps += 1
@@ -32,6 +32,8 @@ class ScenarioRunner:
     def __init__(self, pipeline: IntegrationPipeline, dt: float = 0.1):
         self.pipeline = pipeline
         self.dt = dt
+        # (t, state_before_tick, command_issued) for post-run analysis
+        self.log: List[Tuple[float, VehicleState, ControlCommand]] = []
 
     def run(
         self,
@@ -39,14 +41,8 @@ class ScenarioRunner:
         goal: Pose2D,
         sensor_provider: Callable[[float], SensorFrame],
         state_updater: Callable[[VehicleState, ControlCommand, float], VehicleState],
-        duration_s: float = 10.0
+        duration_s: float = 10.0,
     ) -> ScenarioMetrics:
-        """
-        Runs a deterministic scenario loop.
-        
-        :param sensor_provider: Function(t) -> SensorFrame (M5 provides this)
-        :param state_updater: Function(state, cmd, dt) -> new_state (Simulator physics)
-        """
         metrics = ScenarioMetrics()
         current_state = initial_state
         current_time = 0.0
@@ -55,25 +51,21 @@ class ScenarioRunner:
 
         while current_time <= duration_s:
             t_start = time.perf_counter()
-            
-            # 1. Get sensor data for this timestep
+
             sensor_frame = sensor_provider(current_time)
-            
-            # 2. Tick the pipeline
+
             command = self.pipeline.tick(
                 now=current_time,
                 vehicle_state=current_state,
                 sensor_frame=sensor_frame,
-                goal=goal
+                goal=goal,
             )
-            
-            # 3. Record metrics
+
             t_end = time.perf_counter()
             metrics.log_step(command, (t_end - t_start) * 1000)
-            
-            # 4. Update vehicle state (Simulator physics step)
+            self.log.append((current_time, current_state, command))
+
             current_state = state_updater(current_state, command, self.dt)
-            
             current_time += self.dt
 
         print(f"[ScenarioRunner] Finished. {metrics.summary()}")

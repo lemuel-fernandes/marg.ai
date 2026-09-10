@@ -28,7 +28,7 @@ class PlannerConfig:
     local_dt: float = 0.1
     target_speed: float = 5.0
     
-    
+
 @dataclass(frozen=True)
 class DWAConfig:
     horizon_s: float = 2.5
@@ -37,10 +37,11 @@ class DWAConfig:
     yaw_rate_samples: int = 11
     max_yaw_rate: float = 1.0
     heading_weight: float = 1.0
-    clearance_weight: float = 0.8     # was 2.0 — no longer dominates
-    velocity_weight: float = 1.0      # was 0.5 — progress matters
-    obstacle_margin: float = 1.5
+    goal_weight: float = 1.5
+    clearance_weight: float = 0.8
+    velocity_weight: float = 1.0
+    obstacle_margin: float = 2.5      # <--- CHANGED: Must be > Safety Monitor margin (2.25m)
     lookahead_m: float = 6.0
-    arrival_radius_m: float = 2.0
-    clearance_cap_m: float = 3.0      # was 5.0 — saturate early so "far" == "far enough"
-    stall_penalty: float = 1.5        # NEW: penalty for standing still
+    arrival_radius_m: float = 1.5
+    clearance_cap_m: float = 3.0
+    stall_penalty: float = 1.5

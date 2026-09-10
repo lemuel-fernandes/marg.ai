@@ -25,7 +25,8 @@ class EnvelopeSafetyMonitor:
 
     def evaluate(self, state, trajectory: LocalTrajectory,
                  obstacles: List[Obstacle], costmap: Costmap) -> SafetyDecision:
-        max_curvature = self.cfg.max_steer_angle / max(self.cfg.wheelbase, 1e-6)
+        # FIX: Use exact kinematic curvature limit tan(steer)/L, not linear steer/L
+        max_curvature = math.tan(self.cfg.max_steer_angle) / max(self.cfg.wheelbase, 1e-6)
 
         if not trajectory.points:
             return self._reject("Empty trajectory")
@@ -38,7 +39,7 @@ class EnvelopeSafetyMonitor:
             if pt.acceleration < self.cfg.min_acceleration - 1e-6:
                 return self._reject("Trajectory below min acceleration")
             if abs(pt.curvature) > max_curvature + 1e-6:
-                return self._reject("Trajectory exceeds curvature envelope")
+                return self._reject(f"Trajectory exceeds curvature envelope ({pt.curvature:.3f} > {max_curvature:.3f})")
 
         # Predictive collision check (constant-velocity obstacle prediction)
         ego_r = self.cfg.width / 2.0 + 0.2

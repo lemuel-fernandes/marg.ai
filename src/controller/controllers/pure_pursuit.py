@@ -12,8 +12,8 @@ from src.common.types.vehicle_state import VehicleState
 
 class PurePursuitController:
     def __init__(self, vcfg: VehicleConfig, kp: float = 1.2,
-                 min_lookahead: float = 2.0, max_lookahead: float = 8.0,
-                 lookahead_gain: float = 1.0):
+                 min_lookahead: float = 2.0, max_lookahead: float = 6.0,
+                 lookahead_gain: float = 0.8):
         self.vcfg = vcfg
         self.kp = kp
         self.min_ld = min_lookahead
