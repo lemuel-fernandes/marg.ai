@@ -35,11 +35,12 @@ class DWAConfig:
     dt: float = 0.1
     v_samples: int = 7
     yaw_rate_samples: int = 11
-    max_yaw_rate: float = 0.8
+    max_yaw_rate: float = 1.0
     heading_weight: float = 1.0
-    clearance_weight: float = 2.0
-    velocity_weight: float = 0.5
-    obstacle_margin: float = 1.5     # must be stricter than safety monitor
+    clearance_weight: float = 0.8     # was 2.0 — no longer dominates
+    velocity_weight: float = 1.0      # was 0.5 — progress matters
+    obstacle_margin: float = 1.5
     lookahead_m: float = 6.0
     arrival_radius_m: float = 2.0
-    clearance_cap_m: float = 5.0
+    clearance_cap_m: float = 3.0      # was 5.0 — saturate early so "far" == "far enough"
+    stall_penalty: float = 1.5        # NEW: penalty for standing still

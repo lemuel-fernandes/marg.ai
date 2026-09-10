@@ -94,13 +94,18 @@ class DynamicWindowApproach:
         hn, cn, vn = norm(heading_raw), norm(clear_raw), norm(vel_raw)
 
         best_idx, best_score = 0, -float("inf")
+        scores = []
         for i, c in enumerate(candidates):
             score = (
                 self.cfg.heading_weight * hn[i]
                 + self.cfg.clearance_weight * cn[i]
                 + self.cfg.velocity_weight * vn[i]
             )
-            if score > best_score:
-                best_score, best_idx = score, i
+            # Progress bias: standing still is only acceptable if everything
+            # moving is significantly worse (i.e., genuinely blocked).
+            if c.v < 0.3 and target_speed > 0.3:
+                score -= self.cfg.stall_penalty
+            scores.append(score)
 
+        best_idx = max(range(len(candidates)), key=lambda i: scores[i])
         return candidates[best_idx]
