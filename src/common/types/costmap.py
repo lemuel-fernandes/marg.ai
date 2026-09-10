@@ -1,17 +1,20 @@
-from dataclasses import dataclass
+"""Typed costmap message shared by mapping and planning modules."""
 
 import numpy as np
+from dataclasses import dataclass
 
-from .base import Header
+from src.common.types.base import Header
 
 
 @dataclass
 class Costmap:
+    """A local occupancy/cost grid expressed in the map frame."""
+
     header: Header
-    data: np.ndarray       # 2D cost grid: 0.0 free, 1.0 lethal
-    resolution: float      # meters / cell
+    data: np.ndarray
+    resolution: float
     origin_x: float
     origin_y: float
     width: int
     height: int
-    inflation_radius: float
+    inflation_radius: float = 0.0

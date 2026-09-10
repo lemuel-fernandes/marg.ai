@@ -1,6 +1,7 @@
 """Costmap construction."""
 import math
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -8,6 +9,14 @@ from src.common.types.base import FrameId, Header, Pose2D
 from src.common.types.config import CostmapConfig
 from src.common.types.costmap import Costmap
 from src.common.types.obstacle import Obstacle
+
+
+@dataclass
+class RoadNetwork:
+    """Centerline polylines and half-width for off-road masking."""
+
+    polylines: List[List[Tuple[float, float]]]
+    half_width: float = 3.5
 
 
 class LocalGridCostmapBuilder:
@@ -18,8 +27,11 @@ class LocalGridCostmapBuilder:
     It exists to give the integration layer a valid typed Costmap.
     """
 
-    def __init__(self, cfg: CostmapConfig):
+    def __init__(self, cfg: CostmapConfig, road_network: Optional[RoadNetwork] = None):
         self.cfg = cfg
+        self.road_network = road_network
+        self._static_grid: Optional[np.ndarray] = None
+        self._static_origin: Optional[Tuple[float, float]] = None
 
     def update(
         self,
@@ -31,10 +43,20 @@ class LocalGridCostmapBuilder:
         width = int(round(self.cfg.width_m / self.cfg.resolution))
         height = int(round(self.cfg.height_m / self.cfg.resolution))
 
-        origin_x = ego_pose.x - self.cfg.width_m / 2.0
-        origin_y = ego_pose.y - self.cfg.height_m / 2.0
+        if self.cfg.fixed_origin is not None:
+            origin_x, origin_y = self.cfg.fixed_origin
+        else:
+            origin_x = ego_pose.x - self.cfg.width_m / 2.0
+            origin_y = ego_pose.y - self.cfg.height_m / 2.0
 
-        data = np.zeros((height, width), dtype=np.float32)
+        origin = (origin_x, origin_y)
+        if self.road_network is not None:
+            if self._static_grid is None or self._static_origin != origin:
+                self._static_grid = self._build_static(origin, width, height)
+                self._static_origin = origin
+            data = self._static_grid.copy()
+        else:
+            data = np.zeros((height, width), dtype=np.float32)
 
         for obs in obstacles:
             self._add_obstacle(
@@ -60,6 +82,27 @@ class LocalGridCostmapBuilder:
             height=height,
             inflation_radius=self.cfg.inflation_radius,
         )
+
+    def _build_static(self, origin, width, height) -> np.ndarray:
+        """Mark cells outside the configured road network as lethal."""
+        xs = origin[0] + (np.arange(width) + 0.5) * self.cfg.resolution
+        ys = origin[1] + (np.arange(height) + 0.5) * self.cfg.resolution
+        grid_x, grid_y = np.meshgrid(xs, ys)
+        distance = np.full((height, width), np.inf, dtype=np.float32)
+
+        for polyline in self.road_network.polylines:
+            for (ax, ay), (bx, by) in zip(polyline[:-1], polyline[1:]):
+                abx, aby = bx - ax, by - ay
+                length_sq = abx * abx + aby * aby
+                if length_sq < 1e-9:
+                    continue
+                t = np.clip(((grid_x - ax) * abx + (grid_y - ay) * aby) / length_sq, 0.0, 1.0)
+                segment_distance = np.hypot(
+                    grid_x - (ax + abx * t), grid_y - (ay + aby * t)
+                )
+                distance = np.minimum(distance, segment_distance)
+
+        return np.where(distance > self.road_network.half_width, 1.0, 0.0).astype(np.float32)
 
     def _add_obstacle(
         self,

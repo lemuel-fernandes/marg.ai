@@ -182,13 +182,21 @@ class IntegrationRuntime:
         state: VehicleState,
         reason: str,
     ) -> ControlCommand:
-        print(f"[RUNTIME FAULT] Emergency stop triggered: {reason}")
+        # FIX: Throttle ICS warnings to prevent 300 lines of console spam
+        if "ICS" in reason or "Safety fallback rejected" in reason:
+            if not hasattr(self, '_ics_count'):
+                self._ics_count = 0
+            self._ics_count += 1
+            if self._ics_count % 20 == 0:  # Print only once every 2 seconds (20 ticks)
+                print(f"[ICS] Inevitable Collision State: Holding brakes. ({reason})")
+        else:
+            print(f"[PIPELINE FAULT] Emergency stop triggered: {reason}")
 
         return ControlCommand(
             header=Header(
                 stamp=now,
                 frame_id=FrameId.VEHICLE,
-                source="integration_runtime",
+                source="integration_pipeline",
             ),
             steering_angle=state.steering_angle,
             steering_rate=0.0,

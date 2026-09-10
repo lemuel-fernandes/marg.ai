@@ -88,3 +88,6 @@ class Scenario:
     def get_perception_module(self, provider):
         from src.perception.ground_truth_perception import GroundTruthPerception
         return GroundTruthPerception(provider)
+    
+    def road_network(self):
+        return None

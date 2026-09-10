@@ -41,7 +41,10 @@ class ScenarioExecutor:
 
         pipeline = IntegrationPipeline(
             perception=perception_module,
-            costmap_builder=LocalGridCostmapBuilder(c_cfg),
+            costmap_builder=LocalGridCostmapBuilder(
+                c_cfg,
+                road_network=sc.road_network() if hasattr(sc, "road_network") else None,
+            ),
             global_planner=AStarGlobalPlanner(target_speed=v_cfg.max_speed),
             local_planner=DWALocalPlanner(v_cfg, dwa_cfg),
             controller=PurePursuitController(v_cfg),

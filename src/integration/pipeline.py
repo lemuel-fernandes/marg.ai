@@ -1,6 +1,7 @@
 """End-to-end planning pipeline."""
 
 from typing import List, Optional
+import math
 
 from src.common.types.base import FrameId, Header, Pose2D
 from src.common.types.control import ControlCommand, ControlMode
@@ -57,7 +58,9 @@ class IntegrationPipeline:
         self.tf = transform_tree
         self.bus = message_bus
         self.state_manager = state_manager
-
+        self._last_replan_t = -1e9
+        self.replan_interval_s = 2.0
+        self._invalidation_margin = 1.5
         self._current_costmap: Optional[Costmap] = None
         self._current_global_path: Optional[GlobalPath] = None
         self._current_goal: Optional[Pose2D] = None
@@ -98,21 +101,23 @@ class IntegrationPipeline:
             )
 
             # 3. Global planning
-            if self._should_replan(goal):
-                self._current_global_path = self.global_planner.plan(
+            needs_replan = (
+                self._should_replan(goal)
+                or self._path_invalidated(map_obstacles)
+                or (now - self._last_replan_t) > self.replan_interval_s
+            )
+            if needs_replan:
+                new_path = self.global_planner.plan(
                     costmap=self._current_costmap,
                     start=vehicle_state.pose,
                     goal=goal,
                 )
-                self._current_goal = goal
-
-            if self._current_global_path is None:
-                raise IntegrationFault("Global path unavailable")
-
-            if not self._current_global_path.is_feasible:
-                # Do not fault the pipeline; just issue a stop command and wait for replan
-                return self._emergency_stop_command(now, vehicle_state, "Global path temporarily blocked")
-      
+                if new_path.is_feasible:
+                    self._current_global_path = new_path
+                    self._current_goal = goal
+                    self._last_replan_t = now
+                elif self._current_global_path is None:
+                    raise IntegrationFault("Global path unavailable")
             # 4. Local planning
             local_traj = self.local_planner.plan(
                 state=vehicle_state,
@@ -251,3 +256,13 @@ class IntegrationPipeline:
             brake=1.0,
             mode=ControlMode.EMERGENCY_STOP,
         )
+        
+    def _path_invalidated(self, obstacles) -> bool:
+        if self._current_global_path is None:
+            return False
+        for pt in self._current_global_path.points:
+            for obs in obstacles:
+                r = max(obs.length, obs.width) / 2.0 + self._invalidation_margin
+                if math.hypot(pt.pose.x - obs.pose.x, pt.pose.y - obs.pose.y) < r:
+                    return True
+        return False

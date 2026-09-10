@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-
+from typing import Optional, Tuple
 
 @dataclass(frozen=True)
 class VehicleConfig:
@@ -19,7 +19,7 @@ class CostmapConfig:
     height_m: float = 60.0
     resolution: float = 0.25
     inflation_radius: float = 0.75
-
+    fixed_origin: Optional[Tuple[float, float]] = None 
 
 @dataclass(frozen=True)
 class PlannerConfig:
