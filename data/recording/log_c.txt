@@ -1,0 +1,26 @@
+[ScenarioRunner] Starting scenario for 18.0s...
+[ScenarioRunner] Finished. Steps: 181 | Estops: 0 | Avg Latency: 6.56ms
+[Scenario:sensor_noise] PASS
+    final_dist_m: 1.02
+    min_clearance_m: 2.83
+    emergency_stops: 0.00
+    path_efficiency: 95.54%
+    avg_jerk_mps3: 4.26
+[Recorder] sensor_noise: PASS -> 181 ticks
+[ScenarioRunner] Starting scenario for 30.0s...
+[ScenarioRunner] Finished. Steps: 300 | Estops: 0 | Avg Latency: 41.68ms
+[Scenario:occluded_siren] FAIL
+    final_dist_m: 15.24
+    min_clearance_m: 0.78
+    min_accel_mps2: -2.96
+    emergency_stops: 0.00
+    max_hold_speed_mps: 0.50
+    post_siren_progress_m: 0.52
+    path_efficiency: 97.57%
+    avg_jerk_mps3: 0.79
+    min_ttc_overall_s: 0.57
+    FAILURE: did not reach goal (dist=15.24 m)
+    FAILURE: blind creep during unseen-siren hold (max 0.50 m/s)
+    FAILURE: deadlocked after siren ended (progress 0.52 m)
+[Recorder] occluded_siren: FAIL -> 300 ticks
+[Recorder] Segment saved: data/recording/seg_c.mp4

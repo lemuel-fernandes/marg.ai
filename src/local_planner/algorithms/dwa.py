@@ -1,0 +1,247 @@
+"""Dynamic Window Approach."""
+
+import math
+import os
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
+
+from src.common.types.base import Pose2D, normalize_angle
+from src.common.types.config import DWAConfig, VehicleConfig
+from src.common.types.obstacle import Obstacle
+from src.common.types.vehicle_state import VehicleState
+
+DWA_CODE_VERSION = "v8-fix-velocity-plateau"
+
+@dataclass
+class CandidateTrajectory:
+    v: float
+    yaw_rate: float
+    points: List[Tuple[float, float, float, float]]  # x, y, heading, t
+    min_clearance: float
+    anomaly_cost: float = 0.0
+
+
+class DynamicWindowApproach:
+    """Samples (v, steer) in the dynamic window, rolls out, scores, picks best."""
+
+    def __init__(self, vehicle_cfg: VehicleConfig, dwa_cfg: DWAConfig):
+        if os.environ.get("PATHSENSE_DEBUG"):
+            print(f"[CODE] dwa.py loaded: {DWA_CODE_VERSION}")
+        self.vcfg = vehicle_cfg
+        self.cfg = dwa_cfg
+
+    def _roll_out(self, state: VehicleState, v: float, wr: float) -> List[Tuple[float, float, float, float]]:
+        pts = []
+        x, y, th = state.pose.x, state.pose.y, state.pose.heading
+        n = int(round(self.cfg.horizon_s / self.cfg.dt))
+        for i in range(1, n + 1):
+            x += v * math.cos(th) * self.cfg.dt
+            y += v * math.sin(th) * self.cfg.dt
+            th = normalize_angle(th + wr * self.cfg.dt)
+            pts.append((x, y, th, i * self.cfg.dt))
+        return pts
+
+    def _min_clearance(self, pts, obstacles: List[Obstacle]) -> Tuple[float, float]:
+        """Return (min solid clearance, min anomaly proximity) for the rollout.
+
+        Obstacles are treated as oriented rectangles (length along the
+        obstacle's own heading, width perpendicular to it) rather than a
+        circle sized by the longest dimension. A circle-of-longest-side model
+        makes long, narrow obstacles (a 6m truck, a curb segment) look far
+        wider than they are, which can make normal-width roads geometrically
+        impossible to pass on.
+
+        Surface anomalies (potholes / small static unknowns) are NOT solid
+        obstacles: they never enter the veto/margin channel (a hard margin
+        against a pothole ON the lane center deadlocks the planner — every
+        forward rollout rejected, the stop candidate survives). They are
+        returned separately as a smooth proximity cost the scorer adds so the
+        planner prefers straddling an anomaly over stalling in front of it.
+        """
+        from src.common.types.obstacle import is_surface_anomaly
+
+        min_clear = float("inf")
+        anomaly_cost = 0.0
+        # Anomaly influence radius: just inside obstacle_margin so the kernel
+        # shapes costs without recreating a de-facto veto ring.
+        anomaly_radius = max(0.5, self.cfg.obstacle_margin - 0.5)
+        for (x, y, _, t) in pts:
+            for obs in obstacles:
+                if is_surface_anomaly(obs):
+                    # Surface anomaly: smooth proximity kernel summed over the
+                    # rollout. Driving over the center is worst, straddling the
+                    # edge costs a little, standing well clear costs nothing.
+                    # This steers the planner around/over anomalies instead of
+                    # stalling in front of them (which a margin veto forces).
+                    px = obs.pose.x + obs.velocity.vx * t
+                    py = obs.pose.y + obs.velocity.vy * t
+                    d = math.hypot(x - px, y - py)
+                    if d < anomaly_radius:
+                        anomaly_cost += 1.0 - d / anomaly_radius
+                    continue
+                px = obs.pose.x + obs.velocity.vx * t
+                py = obs.pose.y + obs.velocity.vy * t
+
+                dx = x - px
+                dy = y - py
+                cos_h = math.cos(obs.pose.heading)
+                sin_h = math.sin(obs.pose.heading)
+
+                # Rotate the query point into the obstacle's local frame:
+                # local_x is along the obstacle's heading (its "length" axis),
+                # local_y is perpendicular to it (its "width" axis).
+                local_x = dx * cos_h + dy * sin_h
+                local_y = -dx * sin_h + dy * cos_h
+
+                half_len = obs.length / 2.0
+                half_wid = obs.width / 2.0
+
+                clear_x = abs(local_x) - half_len
+                clear_y = abs(local_y) - half_wid
+
+                if clear_x <= 0.0 and clear_y <= 0.0:
+                    # Query point falls inside the obstacle's footprint.
+                    dist = 0.0
+                else:
+                    dist = math.hypot(max(clear_x, 0.0), max(clear_y, 0.0))
+
+                min_clear = min(min_clear, dist)
+        return min_clear, anomaly_cost
+
+    def _candidates(self, state: VehicleState, obstacles: List[Obstacle], costmap=None,
+                    v_cap: Optional[float] = None) -> List[CandidateTrajectory]:
+        v_cur = state.twist.vx
+        v_lo = max(0.0, v_cur - self.vcfg.max_acceleration * self.cfg.dt)
+        v_hi = min(self.vcfg.max_speed, v_cur + self.vcfg.max_acceleration * self.cfg.dt)
+        if v_cap is not None and v_cap < v_hi:
+            # Hard clamp: the planner-provided cap (brake envelope / creep
+            # profile) constrains the window. If the vehicle is above the cap
+            # and cannot reach it within one step, keep the floor at v_lo so
+            # the window still allows full-rate deceleration.
+            v_hi = max(v_cap, v_lo)
+        candidates: List[CandidateTrajectory] = []
+        for i in range(self.cfg.v_samples):
+            v = v_lo + (v_hi - v_lo) * i / max(1, self.cfg.v_samples - 1)
+            for j in range(self.cfg.yaw_rate_samples):
+                steer = -self.vcfg.max_steer_angle + 2 * self.vcfg.max_steer_angle * j / max(1, self.cfg.yaw_rate_samples - 1)
+                wr = v * math.tan(steer) / self.vcfg.wheelbase
+
+                # Kill loop candidates — yaw rate must stay inside the dynamic window
+                if abs(wr) > self.cfg.max_yaw_rate:
+                    continue
+
+                pts = self._roll_out(state, v, wr)
+                is_lethal, _ = self._costmap_check(pts, costmap)
+                if is_lethal:
+                  continue
+                clear, anom = self._min_clearance(pts, obstacles)
+                if clear < self.cfg.obstacle_margin:
+                    continue  # collision candidate: reject
+                candidates.append(CandidateTrajectory(v=v, yaw_rate=wr, points=pts,
+                                                      min_clearance=clear, anomaly_cost=anom))
+
+        # Always offer a full stop as a safe fallback candidate
+        stop_pts = self._roll_out(state, 0.0, 0.0)
+        is_lethal, _ = self._costmap_check(stop_pts, costmap)
+
+        stop_clear, stop_anom = self._min_clearance(stop_pts, obstacles)
+        if not is_lethal and stop_clear >= self.cfg.obstacle_margin:
+            candidates.append(CandidateTrajectory(v=0.0, yaw_rate=0.0, points=stop_pts,
+                                                  min_clearance=stop_clear, anomaly_cost=stop_anom))
+        return candidates
+    def _costmap_check(self, pts, costmap) -> Tuple[bool, float]:
+        """Returns (is_lethal, max_cost) for a rollout against the road-boundary costmap."""
+        if costmap is None:
+            return False, 0.0
+        lethal_threshold = getattr(self.cfg, "lethal_threshold", 0.9)
+        max_cost = 0.0
+        for (x, y, _, _t) in pts:
+            col = int(round((x - costmap.origin_x) / costmap.resolution))
+            row = int(round((y - costmap.origin_y) / costmap.resolution))
+            if not (0 <= row < costmap.height and 0 <= col < costmap.width):
+                return True, 1.0  # outside known local grid — treat as unsafe, not free
+            cell_cost = float(costmap.data[row, col])
+            max_cost = max(max_cost, cell_cost)
+            if cell_cost >= lethal_threshold:
+                return True, cell_cost
+        return False, max_cost
+
+    def plan(
+        self,
+        state: VehicleState,
+        target_pose: Pose2D,
+        target_speed: float,
+
+        obstacles: List[Obstacle],
+        costmap: Optional["Costmap"] = None,
+    ) -> Optional[CandidateTrajectory]:
+        candidates = self._candidates(state, obstacles, costmap, v_cap=target_speed)
+        self.last_candidates = candidates 
+        if not candidates:
+            return None
+
+        arrival_mode = target_speed < 0.3
+
+        # Heading score: alignment of the rollout's FINAL heading with the
+        # direction from the CURRENT state to the target.
+        desired_start = math.atan2(target_pose.y - state.pose.y, target_pose.x - state.pose.x)
+
+        heading_raw, goal_raw, clear_raw, vel_raw = [], [], [], []
+        for c in candidates:
+            fx, fy, fth, _ = c.points[-1]
+            heading_raw.append(math.cos(normalize_angle(desired_start - fth)))
+            goal_raw.append(-math.hypot(target_pose.x - fx, target_pose.y - fy))
+            clear_raw.append(min(c.min_clearance, self.cfg.clearance_cap_m) / self.cfg.clearance_cap_m)
+
+            if arrival_mode:
+                # Reward stopping
+                vel_raw.append(max(0.0, 1.0 - c.v / 1.0))
+            else:
+                # FIX: Strictly penalize exceeding target_speed to enforce braking ramps
+                if c.v > target_speed + 1e-3:
+                    overshoot = c.v - target_speed
+                    max_overshoot = self.vcfg.max_speed - target_speed
+                    vel_raw.append(max(0.0, 1.0 - overshoot / (max_overshoot + 1e-6)))
+                else:
+                    # Reward matching target_speed
+                    vel_raw.append(c.v / (target_speed + 1e-6))
+
+        def norm(vals):
+            lo, hi = min(vals), max(vals)
+            return [1.0 if hi - lo < 1e-9 else (v - lo) / (hi - lo) for v in vals]
+
+        # Surface-anomaly proximity cost (potholes etc.): normalized against
+        # the rollout length so the term is comparable to the other [0,1]
+        # score components regardless of horizon length.
+        anom_raw = [c.anomaly_cost / max(len(c.points), 1) for c in candidates]
+
+        hn, gn, cn, vn, an = (norm(heading_raw), norm(goal_raw),
+                  norm(clear_raw), norm(vel_raw), norm(anom_raw))
+
+        scores = []
+        for i, c in enumerate(candidates):
+            score = (
+                self.cfg.heading_weight * hn[i]
+                + self.cfg.goal_weight * gn[i]
+                + self.cfg.clearance_weight * cn[i]
+                + self.cfg.velocity_weight * vn[i]
+                - self.cfg.clearance_weight * an[i]
+            )
+            if c.v < 0.3 and not arrival_mode:
+                score -= self.cfg.stall_penalty
+            scores.append(score)
+
+        best_idx = max(range(len(candidates)), key=lambda i: scores[i])
+        
+        if os.environ.get("PATHSENSE_DEBUG"):
+            order = sorted(range(len(candidates)), key=lambda i: scores[i], reverse=True)[:3]
+            for k in order:
+                c = candidates[k]
+                print(f"    [DWA] v={c.v:.2f} wr={c.yaw_rate:+.2f} head={hn[k]:+.2f} "
+                      f"clear={cn[k]:.2f} vel={vn[k]:.2f} score={scores[k]:+.2f}")
+            print(f"    [DWA] state=({state.pose.x:.1f},{state.pose.y:.1f}) "
+                  f"hdg={math.degrees(state.pose.heading):+.0f}deg "
+                  f"target=({target_pose.x:.1f},{target_pose.y:.1f}) desired={math.degrees(desired_start):+.0f}deg "
+                  f"target_speed={target_speed:.2f}")
+                  
+        return candidates[best_idx]

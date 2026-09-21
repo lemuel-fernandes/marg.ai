@@ -1,0 +1,113 @@
+
+===== SCENARIO: static_obstacle =====
+[ScenarioRunner] Starting scenario for 12.0s...
+[ScenarioRunner] Finished. Steps: 121 | Estops: 0 | Avg Latency: 6.20ms
+[Scenario:static_obstacle] PASS
+    final_dist_m: 1.18
+    min_clearance_m: 2.79
+    emergency_stops: 0.00
+    path_efficiency: 94.09%
+    avg_jerk_mps3: 3.56
+[Simulator] Saved trajectory plot to D:\code\sih\marg.ai\scenario_static_obstacle.png
+
+===== SCENARIO: crossing_animal =====
+[ScenarioRunner] Starting scenario for 14.0s...
+[ScenarioRunner] Finished. Steps: 141 | Estops: 0 | Avg Latency: 5.49ms
+[WARN] harsh braking: -3.50 m/s^2 (comfort target -3.0)
+[Scenario:crossing_animal] PASS
+    final_dist_m: 1.34
+    min_clearance_m: 6.00
+    min_accel_mps2: -3.50
+    max_lateral_dev_m: 34.01
+    rejoin_t_s: 10.30
+    emergency_stops: 0.00
+    path_efficiency: 98.49%
+    avg_jerk_mps3: 10.24
+    min_ttc_s: 1.89
+    min_ttc_overall_s: 1.89
+[Simulator] Saved trajectory plot to D:\code\sih\marg.ai\scenario_crossing_animal.png
+
+===== SCENARIO: multi_animal =====
+[ScenarioRunner] Starting scenario for 14.0s...
+[ScenarioRunner] Finished. Steps: 141 | Estops: 0 | Avg Latency: 8.61ms
+[WARN] harsh braking: -3.50 m/s^2
+[Scenario:multi_animal] PASS
+    final_dist_m: 1.23
+    min_clearance_m: 1.40
+    min_accel_mps2: -3.50
+    emergency_stops: 0.00
+    path_efficiency: 100.00%
+    avg_jerk_mps3: 9.50
+    min_ttc_overall_s: 0.53
+[Simulator] Saved trajectory plot to D:\code\sih\marg.ai\scenario_multi_animal.png
+
+===== SCENARIO: sensor_noise =====
+[ScenarioRunner] Starting scenario for 18.0s...
+[ScenarioRunner] Finished. Steps: 181 | Estops: 0 | Avg Latency: 5.94ms
+[Scenario:sensor_noise] PASS
+    final_dist_m: 1.02
+    min_clearance_m: 2.83
+    emergency_stops: 0.00
+    path_efficiency: 95.54%
+    avg_jerk_mps3: 4.26
+[Simulator] Saved trajectory plot to D:\code\sih\marg.ai\scenario_sensor_noise.png
+
+===== SCENARIO: indian_road =====
+[ScenarioRunner] Starting scenario for 60.0s...
+[ScenarioRunner] Finished. Steps: 600 | Estops: 0 | Avg Latency: 266.96ms
+[WARN] harsh braking: -3.50 m/s^2
+[Scenario:indian_road] PASS
+    final_dist_m: 1.51
+    min_clearance_m: 0.49
+    min_accel_mps2: -3.50
+    emergency_stops: 0.00
+    path_efficiency: 99.71%
+    avg_jerk_mps3: 9.16
+    min_ttc_s: 4.67
+    min_ttc_overall_s: 0.01
+[Simulator] Saved trajectory plot to D:\code\sih\marg.ai\scenario_indian_road.png
+
+===== SCENARIO: city_roads =====
+[ScenarioRunner] Starting scenario for 60.0s...
+[ScenarioRunner] Finished. Steps: 600 | Estops: 8 | Avg Latency: 41.27ms
+[Scenario:city_roads] FAIL
+    final_dist_m: 2.78
+    min_clearance_m: 1.45
+    min_accel_mps2: -3.50
+    emergency_stops: 8.00
+    boundary_overshoot_m: 5.46
+    path_efficiency: 85.53%
+    avg_jerk_mps3: 3.03
+    min_ttc_s: 0.78
+    min_ttc_overall_s: 0.69
+    FAILURE: boundary violation: ego left road corridor by 5.46 m
+[Simulator] Saved trajectory plot to D:\code\sih\marg.ai\scenario_city_roads.png
+
+===== SCENARIO: occluded_siren =====
+[ScenarioRunner] Starting scenario for 30.0s...
+[ScenarioRunner] Finished. Steps: 300 | Estops: 0 | Avg Latency: 31.27ms
+[Scenario:occluded_siren] FAIL
+    final_dist_m: 15.24
+    min_clearance_m: 0.78
+    min_accel_mps2: -2.96
+    emergency_stops: 0.00
+    max_hold_speed_mps: 0.50
+    post_siren_progress_m: 0.52
+    path_efficiency: 97.57%
+    avg_jerk_mps3: 0.79
+    min_ttc_overall_s: 0.57
+    FAILURE: did not reach goal (dist=15.24 m)
+    FAILURE: blind creep during unseen-siren hold (max 0.50 m/s)
+    FAILURE: deadlocked after siren ended (progress 0.52 m)
+[Simulator] Saved trajectory plot to D:\code\sih\marg.ai\scenario_occluded_siren.png
+
+===== SUMMARY =====
+static_obstacle      PASS  {'final_dist_m': 1.1835767718380101, 'min_clearance_m': 2.7929830767970483, 'emergency_stops': 0.0, 'path_efficiency': 0.9409069147822593, 'avg_jerk_mps3': 3.557422969187676}
+crossing_animal      PASS  {'final_dist_m': 1.3350063963705454, 'min_clearance_m': 6.001212868592633, 'min_accel_mps2': -3.5, 'max_lateral_dev_m': 34.01182882185583, 'rejoin_t_s': 10.29999999999998, 'emergency_stops': 0.0, 'path_efficiency': 0.9848509865891371, 'avg_jerk_mps3': 10.23980815347722, 'min_ttc_s': 1.8859444528961513, 'min_ttc_overall_s': 1.8859444528961513}
+multi_animal         PASS  {'final_dist_m': 1.230000000000004, 'min_clearance_m': 1.3950000000000073, 'min_accel_mps2': -3.5, 'emergency_stops': 0.0, 'path_efficiency': 1.0, 'avg_jerk_mps3': 9.496402877697843, 'min_ttc_overall_s': 0.5301783657109977}
+sensor_noise         PASS  {'final_dist_m': 1.015558858545143, 'min_clearance_m': 2.8267673071306687, 'emergency_stops': 0.0, 'path_efficiency': 0.9554438012999612, 'avg_jerk_mps3': 4.264432029795159}
+indian_road          PASS  {'final_dist_m': 1.5070800468701944, 'min_clearance_m': 0.48574290026420797, 'min_accel_mps2': -3.5, 'emergency_stops': 0.0, 'path_efficiency': 0.9970949749619595, 'avg_jerk_mps3': 9.158305462653292, 'min_ttc_s': 4.668767676430542, 'min_ttc_overall_s': 0.01286221196700525}
+city_roads           FAIL  {'final_dist_m': 2.7785201829461004, 'min_clearance_m': 1.4534270935325142, 'min_accel_mps2': -3.5, 'emergency_stops': 8.0, 'boundary_overshoot_m': 5.465, 'path_efficiency': 0.8552978286692753, 'avg_jerk_mps3': 3.030186268911984, 'min_ttc_s': 0.7818851584713606, 'min_ttc_overall_s': 0.6874346941701364}
+occluded_siren       FAIL  {'final_dist_m': 15.235540228273171, 'min_clearance_m': 0.778751832784669, 'min_accel_mps2': -2.959986276359812, 'emergency_stops': 0.0, 'max_hold_speed_mps': 0.5036749050028506, 'post_siren_progress_m': 0.5200521289357631, 'path_efficiency': 0.9757223425128935, 'avg_jerk_mps3': 0.7918916230778625, 'min_ttc_overall_s': 0.5717803559885147}
+
+[Report] Saved evaluation metrics to metrics_report.md
