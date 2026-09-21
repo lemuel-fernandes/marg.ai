@@ -5,6 +5,7 @@ from .scenarios.sensor_noise import SensorNoiseScenario
 from .scenarios.indian_road import IndianRoadScenario
 from .scenarios.city_roads import CityRoadsScenario
 from .scenarios.occluded_siren import OccludedSirenScenario
+from .scenarios.free_world import FreeWorldScenario
 
 REGISTRY = {
     "static_obstacle": StaticObstacleScenario,
@@ -14,4 +15,5 @@ REGISTRY = {
     "indian_road": IndianRoadScenario,
     "city_roads": CityRoadsScenario,
     "occluded_siren": OccludedSirenScenario,
+    "free_world": FreeWorldScenario,
 }

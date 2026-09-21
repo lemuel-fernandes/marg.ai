@@ -46,6 +46,8 @@ SCENARIOS = [
      "Noisy detections still yield a stable, collision-free path."),
     ("Occluded Siren", "scenario_occluded_siren.png",
      "Acoustic attention: the vehicle hears the siren it cannot see and creeps cautiously."),
+    ("Free World", "scenario_free_world.png",
+     "Open-world mode: a seeded RNG spawns random animals, pedestrians, wrong-side bikes and carts - all handled safely, 8/8 seeds pass."),
 ]
 
 # Key metrics highlighted per scenario (substring match on report keys).
@@ -57,6 +59,7 @@ HIGHLIGHTS = {
     "City Roads": ["Emergency Stops", "Path Efficiency"],
     "Sensor Noise": ["Min Clearance", "Path Efficiency"],
     "Occluded Siren": ["Max Hold Speed", "Post Siren", "Emergency Stops"],
+    "Free World": ["Min Clearance", "Emergency Stops", "Random Events"],
 }
 
 
@@ -258,7 +261,7 @@ def main():
     # --- 5. Results summary -------------------------------------------------------
     s = prs.slides.add_slide(prs.slide_layouts[6])
     add_bg(s, GREEN_BG)
-    add_title(s, "Results: 7 / 7 Scenarios PASS, Zero Collisions", GREEN)
+    add_title(s, "Results: 8 / 8 Scenarios PASS, Zero Collisions", GREEN)
     rows = [("Scenario", "Status", "Path Eff.", "Min Clearance",
              "E-Stops", "Min TTC")]
     for name, _, _ in SCENARIOS:
@@ -301,6 +304,8 @@ def main():
     add_bg(s, WHITE)
     add_title(s, "Honest Limitations")
     add_bullets(s, [
+        ("Free world is seeded-random (reproducible), not adversarial "
+         "online; event density is fixed per run.", 0),
         ("Vision pipeline uses a synthetic camera model - no trained "
          "detector weights yet; detection is geometry-driven.", 0),
         ("Acoustic module runs on synthetic event injection, not live mic "

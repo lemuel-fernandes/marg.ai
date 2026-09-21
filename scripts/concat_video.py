@@ -19,7 +19,7 @@ SEG_DIR = os.path.join(ROOT, "data", "recording")
 OUT = os.path.join(SEG_DIR, "pathsense_demo.mp4")
 
 SEGMENTS = ["seg_intro.mp4", "seg_a.mp4", "seg_b.mp4", "seg_c.mp4",
-            "seg_outro.mp4"]
+            "seg_d.mp4", "seg_outro.mp4"]
 
 
 def main():

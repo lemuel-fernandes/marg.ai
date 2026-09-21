@@ -55,6 +55,8 @@ TITLES = {
                      "Noisy detections still yield a stable, collision-free path"),
     "occluded_siren": ("Occluded Siren (Acoustic Attention)",
                        "The vehicle hears the siren it cannot see and creeps forward cautiously"),
+    "free_world": ("Free World (Random Events)",
+                   "Open road, seeded RNG spawns animals, pedestrians, wrong-side bikes and carts - all answered safely"),
 }
 
 C_TRAIL = "#1565c0"
@@ -345,7 +347,7 @@ INTRO = [
 ]
 
 OUTRO = [
-    ("Results: 7 / 7 scenarios PASS - zero collisions", 17, "bold", "#1b5e20"),
+    ("Results: 8 / 8 scenarios PASS - zero collisions", 17, "bold", "#1b5e20"),
     ("Zero emergency stops on dynamic-animal scenarios", 12, "normal", "#263238"),
     ("Path efficiency up to 100%  -  bounded jerk & braking", 12, "normal", "#263238"),
     ("Acoustic attention handles occluded sirens", 12, "normal", "#263238"),

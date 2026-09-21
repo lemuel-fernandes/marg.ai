@@ -1,5 +1,5 @@
 # PathSense Evaluation Metrics Report
-**Generated:** 2026-09-21 13:50:41
+**Generated:** 2026-09-21 15:22:49
 
 ## Overall Status: ALL PASS
 
@@ -85,6 +85,20 @@
 - **Min Ttc S:** 0.93
 - **Min Ttc Overall S:** 0.33
 - **Plot:** `scenario_occluded_siren.png`
+
+### Free World
+- **Status:** PASS
+- **Final Dist M:** 1.28
+- **Min Clearance M:** 1.50
+- **Min Accel Mps2:** -3.50
+- **Emergency Stops:** 0.00
+- **Random Events:** 3.00
+- **World Seed:** 2026.00
+- **Path Efficiency:** 79.34%
+- **Avg Jerk Mps3:** 15.32
+- **Min Ttc S:** 2.29
+- **Min Ttc Overall S:** 2.12
+- **Plot:** `scenario_free_world.png`
 
 ## Architectural Notes for Judges
 - **Safety Monitor:** Independent envelope checking prevents physical limit violations.

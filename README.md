@@ -44,7 +44,7 @@ The system perceives its surroundings, builds a live costmap with road-network b
 - [x] Local planner + collision avoidance (Time-Aware DWA with OBB geometry)
 - [x] Controller / vehicle dynamics integration (Pure Pursuit + Kinematic Bicycle)
 - [x] Dashboard / visualization (Live Matplotlib Telemetry)
-- [x] Test scenario suite + evaluation metrics (6 Scenarios + Auto-generated Report)
+- [x] Test scenario suite + evaluation metrics (8 Scenarios incl. Free World random-events mode + Auto-generated Report)
 - [x] Demo video (`data/recording/pathsense_demo.mp4`, regenerate with `scripts/record_demo.py` + concat) + final PPT (`pathsense_ppt.pptx`, regenerate with `scripts/make_ppt.py`)
 
 ---
