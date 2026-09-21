@@ -45,7 +45,7 @@ The system perceives its surroundings, builds a live costmap with road-network b
 - [x] Controller / vehicle dynamics integration (Pure Pursuit + Kinematic Bicycle)
 - [x] Dashboard / visualization (Live Matplotlib Telemetry)
 - [x] Test scenario suite + evaluation metrics (6 Scenarios + Auto-generated Report)
-- [ ] Demo video + final PPT
+- [x] Demo video (`data/recording/pathsense_demo.mp4`, regenerate with `scripts/record_demo.py` + concat) + final PPT (`pathsense_ppt.pptx`, regenerate with `scripts/make_ppt.py`)
 
 ---
 

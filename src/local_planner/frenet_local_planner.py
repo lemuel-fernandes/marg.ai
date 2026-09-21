@@ -59,6 +59,18 @@ class AdaptiveFrenetLocalPlanner(LocalPlanner):
         self._prev_d = 0.0
         self._prev_d_d = 0.0
         self._creep_steps = 0
+        # Lateral anchor captured when an unseen-cue acoustic HOLD begins.
+        # The hold pins the candidate lateral window to this ABSOLUTE anchor
+        # (plus a small slack) every tick — re-pinning to the drifting
+        # current offset instead lets the proximity field walk the ego to
+        # the road rim tick by tick, wedging it there with no post-hold
+        # escape (observed as the occluded_siren deadlock at d ~ -3.2).
+        self._hold_anchor_d: Optional[float] = None
+        # Debounced unseen-cue HOLD state: cue publishes can gap for a tick
+        # or two; without latching, hold/crawl flapping lets speed creep
+        # back up inside the hold window and re-arms the outward crawl.
+        self._hold_active = False
+        self._hold_ticks = 0
 
         # Acoustic attention coupling (ROADMAP #27b): the pipeline pushes the
         # latest AttentionCues here each tick (see set_acoustic_cues).
@@ -270,16 +282,41 @@ class AdaptiveFrenetLocalPlanner(LocalPlanner):
         # escape-speed sampling below handles the "stopping is unsafe" case.)
         creep_window = 8.0
         if audible_unseen:
+            self._hold_active = True
+            self._hold_ticks = 0
+        elif self._hold_active:
+            self._hold_ticks += 1
+            # Release only after HOLD_RELEASE_TICKS consecutive cue-less
+            # ticks: a matching visual track appearing (ambulance overtakes
+            # visibly) ends the hold far earlier than that.
+            if self._hold_ticks > 10:
+                self._hold_active = False
+                self._hold_anchor_d = None
+
+        if self._hold_active:
             # Audible but unseen (e.g. siren from an occluded overtaker):
             # HOLD position. This must be cue-driven, not creep-threshold-
             # driven — a 2.0 m/s siren cap above the creep threshold would
             # otherwise let the ego drive up to the blocker blind.
-            # Lateral range is pinned near the current offset: letting the
-            # proximity field drift the ego toward the road edge during the
-            # hold wedges it into a position with no kinematic escape later.
-            target_v = 0.0
+            #
+            # While still moving, return the controlled strong-brake ramp
+            # (comfort-envelope decel): waiting for a 'target_v=0' candidate
+            # set to decelerate means braking over the 1.5-3.5 s candidate
+            # horizon only (~0.9 m/s^2 at 3.3 m/s), a ~15 m glide that the
+            # evaluate window flags as blind creep (0.94 m/s at t=4.5). The
+            # lateral anchor is still captured at hold entry so the ramp
+            # continues the entry heading; once stopped, hold position with
+            # an absolutely-anchored lateral window (re-pinning to the
+            # drifting offset each tick ratchets the ego to the road rim).
             self._creep_steps = 0
-            d_range = (ego_d - 0.3, ego_d + 0.3, 0.1)
+            if self._hold_anchor_d is None:
+                self._hold_anchor_d = ego_d
+            if state.twist.vx > 0.15:
+                return self._strong_brake(
+                    state, reason="Acoustic hold: braking for unseen cue")
+            d_range = (self._hold_anchor_d - 0.3,
+                       self._hold_anchor_d + 0.3, 0.1)
+            target_v = 0.0
         elif 0.0 < target_v <= 1.5:
             # Lateral tolerance 1.6: the blocker shadow after a hold includes
             # offsets around d=+-1.2; a 1.2 boundary makes blocked_ahead False
@@ -326,6 +363,9 @@ class AdaptiveFrenetLocalPlanner(LocalPlanner):
             else:
                 d_range = directives.get("d_range", (-1.8, 1.9, 0.3))
         else:
+            # Hold released: clear the lateral anchor so the next hold
+            # captures a fresh one at its own entry offset.
+            self._hold_anchor_d = None
             self._creep_steps = 0
             d_range = directives.get("d_range", (-1.8, 1.9, 0.3))
 
@@ -459,9 +499,14 @@ class AdaptiveFrenetLocalPlanner(LocalPlanner):
                 road_anomalies=frenet_anomalies,
                 target_speed=0.8,
                 # Allow escape from inside the fattened veto box (the ego is
-                # already stopped there); the safety monitor remains the hard
-                # gate with true OBB geometry.
-                escape_allowance_s=0.4,
+                # already stopped there). The allowance must cover the whole
+                # candidate horizon: a deep box (e.g. a 6 m truck + inflation
+                # pads) takes ~9 s to traverse at the 0.8 m/s escape crawl,
+                # so a short allowance vetoes every candidate mid-box and the
+                # ego stays wedged forever (observed as the occluded_siren
+                # post-hold deadlock 3.5 m behind the truck tail). The safety
+                # monitor remains the hard gate with true OBB geometry.
+                escape_allowance_s=3.6,
             )
 
         if best_frenet is None:

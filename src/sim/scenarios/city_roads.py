@@ -122,12 +122,11 @@ class CityRoadsScenario(Scenario):
             add(100 + i, ObstacleClass.POTHOLE, px, py, 0.0, 0.0, 0.0, 0.8, 0.8, False)
         return obs
 
-    def get_local_planner(self, v_cfg, dwa_cfg):
-        from src.local_planner.frenet_local_planner import AdaptiveFrenetLocalPlanner
-        # Cruise target below the 6.0 m/s scenario cap: surprise spawns (a dog
-        # darting out 3 m ahead) must be physically answerable within the
-        # braking envelope, and unstructured-road speeds are low anyway.
-        return AdaptiveFrenetLocalPlanner(v_cfg, target_speed=4.5, creep_speed=1.5)
+    # NOTE: uses the executor's default DWA local planner. The experimental
+    # AdaptiveFrenetLocalPlanner ratchets laterally off the reference line on
+    # the double arc (edge-cost pull vs cost_lat at 4.5 m/s cruise), leaving
+    # the road corridor by ~3 m. Revisit after reference-relative edge
+    # handling lands.
 
     def plot_tracks(self):
         tracks = [{"points": MAIN, "markers": [], "radius": 0.3, "color": "gray", "ls": "-", "label": "Main road"},

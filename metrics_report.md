@@ -1,7 +1,7 @@
 # PathSense Evaluation Metrics Report
-**Generated:** 2026-09-21 12:28:06
+**Generated:** 2026-09-21 13:50:41
 
-## Overall Status: FAILURES DETECTED
+## Overall Status: ALL PASS
 
 ## Detailed Scenario Results
 
@@ -50,42 +50,40 @@
 
 ### Indian Road
 - **Status:** PASS
-- **Final Dist M:** 1.51
-- **Min Clearance M:** 0.49
+- **Final Dist M:** 1.39
+- **Min Clearance M:** 0.38
 - **Min Accel Mps2:** -3.50
 - **Emergency Stops:** 0.00
-- **Path Efficiency:** 99.71%
-- **Avg Jerk Mps3:** 9.16
-- **Min Ttc S:** 4.67
-- **Min Ttc Overall S:** 0.01
+- **Path Efficiency:** 99.53%
+- **Avg Jerk Mps3:** 9.89
+- **Min Ttc S:** 4.84
+- **Min Ttc Overall S:** 0.02
 - **Plot:** `scenario_indian_road.png`
 
 ### City Roads
-- **Status:** FAIL
-- **Final Dist M:** 2.78
-- **Min Clearance M:** 1.45
+- **Status:** PASS
+- **Final Dist M:** 1.35
+- **Min Clearance M:** 1.51
 - **Min Accel Mps2:** -3.50
-- **Emergency Stops:** 8.00
-- **Boundary Overshoot M:** 5.46
-- **Path Efficiency:** 85.53%
-- **Avg Jerk Mps3:** 3.03
-- **Min Ttc S:** 0.78
-- **Min Ttc Overall S:** 0.69
-- **Failures:** boundary violation: ego left road corridor by 5.46 m
+- **Emergency Stops:** 0.00
+- **Path Efficiency:** 80.60%
+- **Avg Jerk Mps3:** 10.33
+- **Min Ttc S:** 0.88
+- **Min Ttc Overall S:** 0.88
 - **Plot:** `scenario_city_roads.png`
 
 ### Occluded Siren
-- **Status:** FAIL
-- **Final Dist M:** 15.24
-- **Min Clearance M:** 0.78
-- **Min Accel Mps2:** -2.96
+- **Status:** PASS
+- **Final Dist M:** 1.89
+- **Min Clearance M:** 0.37
+- **Min Accel Mps2:** -3.50
 - **Emergency Stops:** 0.00
-- **Max Hold Speed Mps:** 0.50
-- **Post Siren Progress M:** 0.52
-- **Path Efficiency:** 97.57%
-- **Avg Jerk Mps3:** 0.79
-- **Min Ttc Overall S:** 0.57
-- **Failures:** did not reach goal (dist=15.24 m), blind creep during unseen-siren hold (max 0.50 m/s), deadlocked after siren ended (progress 0.52 m)
+- **Max Hold Speed Mps:** 0.14
+- **Post Siren Progress M:** 17.20
+- **Path Efficiency:** 97.47%
+- **Avg Jerk Mps3:** 3.54
+- **Min Ttc S:** 0.93
+- **Min Ttc Overall S:** 0.33
 - **Plot:** `scenario_occluded_siren.png`
 
 ## Architectural Notes for Judges

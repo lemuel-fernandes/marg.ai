@@ -72,7 +72,8 @@ class LocalGridCostmapBuilder:
         # elevated (non-lethal) cost where they will be, so the global planner
         # schedules maneuvers around predicted occupancy — an overtake waits
         # for an oncoming corridor to pass instead of meeting it mid-road.
-        self._stamp_prediction_corridors(data, obstacles, origin_x, origin_y)
+        self._stamp_prediction_corridors(data, obstacles, origin_x, origin_y,
+                                         ego_pose)
 
         header = Header(
             stamp=stamp,
@@ -164,7 +165,8 @@ class LocalGridCostmapBuilder:
         window = data[y0:y1 + 1, x0:x1 + 1]
         np.maximum(window, cost, out=window)
 
-    def _stamp_prediction_corridors(self, data, obstacles, origin_x, origin_y):
+    def _stamp_prediction_corridors(self, data, obstacles, origin_x, origin_y,
+                                    ego_pose):
         """Stamp CV-predicted corridors of closing dynamic actors.
 
         For each dynamic obstacle moving toward the ego region, sweep its
@@ -172,6 +174,17 @@ class LocalGridCostmapBuilder:
         the swept cells (never lethal — the local planners must retain the
         freedom to execute an emergency maneuver through a corridor if the
         prediction turns out wrong; the cost only biases route *scheduling*).
+
+        Only CLOSING actors (range to ego decreasing) are stamped. A
+        receding actor — e.g. a slow same-direction leader the ego follows —
+        is not a conflict to pre-emptively route around: blanket-stamping
+        its constant-velocity sweep painted the road interior ahead of it
+        for the entire follow duration, which pushed the global reference
+        onto the road rim (observed as the city_roads arc rim-hug) and
+        blanketed the escape band behind an overtaking ambulance
+        (occluded_siren). The actor's lethal body stamp already blocks its
+        current footprint; follow/overtake decisions stay with the local
+        planner.
         """
         if not obstacles:
             return
@@ -180,11 +193,17 @@ class LocalGridCostmapBuilder:
         res = self.cfg.resolution
         n_steps = max(1, int(round(pc.horizon_s / pc.step_s)))
 
+        ex, ey = ego_pose.x, ego_pose.y
         for obs in obstacles:
             if not obs.is_dynamic or is_surface_anomaly(obs):
                 continue
             speed = math.hypot(obs.velocity.vx, obs.velocity.vy)
             if speed < pc.min_speed_mps:
+                continue
+            # Closing test: d/dt |obs - ego|^2 < 0 (range rate negative).
+            rx = obs.pose.x - ex
+            ry = obs.pose.y - ey
+            if rx * obs.velocity.vx + ry * obs.velocity.vy >= 0.0:
                 continue
             for k in range(1, n_steps + 1):
                 t = k * pc.step_s
