@@ -10,6 +10,7 @@ from src.common.types.trajectory import LocalTrajectory
 
 class Topic:
     PERCEPTION = "perception/output"
+    ACOUSTIC_CUE = "perception/acoustic_cue"
     COSTMAP = "mapping/costmap"
     GLOBAL_PATH = "planning/global_path"
     LOCAL_TRAJECTORY = "planning/local_trajectory"

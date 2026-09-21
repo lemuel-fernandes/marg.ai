@@ -18,6 +18,7 @@ class CandidateTrajectory:
     yaw_rate: float
     points: List[Tuple[float, float, float, float]]  # x, y, heading, t
     min_clearance: float
+    anomaly_cost: float = 0.0
 
 
 class DynamicWindowApproach:
@@ -40,8 +41,8 @@ class DynamicWindowApproach:
             pts.append((x, y, th, i * self.cfg.dt))
         return pts
 
-    def _min_clearance(self, pts, obstacles: List[Obstacle]) -> float:
-        """Min distance from rollout points to *predicted* obstacle positions.
+    def _min_clearance(self, pts, obstacles: List[Obstacle]) -> Tuple[float, float]:
+        """Return (min solid clearance, min anomaly proximity) for the rollout.
 
         Obstacles are treated as oriented rectangles (length along the
         obstacle's own heading, width perpendicular to it) rather than a
@@ -49,10 +50,35 @@ class DynamicWindowApproach:
         makes long, narrow obstacles (a 6m truck, a curb segment) look far
         wider than they are, which can make normal-width roads geometrically
         impossible to pass on.
+
+        Surface anomalies (potholes / small static unknowns) are NOT solid
+        obstacles: they never enter the veto/margin channel (a hard margin
+        against a pothole ON the lane center deadlocks the planner — every
+        forward rollout rejected, the stop candidate survives). They are
+        returned separately as a smooth proximity cost the scorer adds so the
+        planner prefers straddling an anomaly over stalling in front of it.
         """
+        from src.common.types.obstacle import is_surface_anomaly
+
         min_clear = float("inf")
+        anomaly_cost = 0.0
+        # Anomaly influence radius: just inside obstacle_margin so the kernel
+        # shapes costs without recreating a de-facto veto ring.
+        anomaly_radius = max(0.5, self.cfg.obstacle_margin - 0.5)
         for (x, y, _, t) in pts:
             for obs in obstacles:
+                if is_surface_anomaly(obs):
+                    # Surface anomaly: smooth proximity kernel summed over the
+                    # rollout. Driving over the center is worst, straddling the
+                    # edge costs a little, standing well clear costs nothing.
+                    # This steers the planner around/over anomalies instead of
+                    # stalling in front of them (which a margin veto forces).
+                    px = obs.pose.x + obs.velocity.vx * t
+                    py = obs.pose.y + obs.velocity.vy * t
+                    d = math.hypot(x - px, y - py)
+                    if d < anomaly_radius:
+                        anomaly_cost += 1.0 - d / anomaly_radius
+                    continue
                 px = obs.pose.x + obs.velocity.vx * t
                 py = obs.pose.y + obs.velocity.vy * t
 
@@ -80,12 +106,19 @@ class DynamicWindowApproach:
                     dist = math.hypot(max(clear_x, 0.0), max(clear_y, 0.0))
 
                 min_clear = min(min_clear, dist)
-        return min_clear
+        return min_clear, anomaly_cost
 
-    def _candidates(self, state: VehicleState, obstacles: List[Obstacle], costmap=None) -> List[CandidateTrajectory]:
+    def _candidates(self, state: VehicleState, obstacles: List[Obstacle], costmap=None,
+                    v_cap: Optional[float] = None) -> List[CandidateTrajectory]:
         v_cur = state.twist.vx
         v_lo = max(0.0, v_cur - self.vcfg.max_acceleration * self.cfg.dt)
         v_hi = min(self.vcfg.max_speed, v_cur + self.vcfg.max_acceleration * self.cfg.dt)
+        if v_cap is not None and v_cap < v_hi:
+            # Hard clamp: the planner-provided cap (brake envelope / creep
+            # profile) constrains the window. If the vehicle is above the cap
+            # and cannot reach it within one step, keep the floor at v_lo so
+            # the window still allows full-rate deceleration.
+            v_hi = max(v_cap, v_lo)
         candidates: List[CandidateTrajectory] = []
         for i in range(self.cfg.v_samples):
             v = v_lo + (v_hi - v_lo) * i / max(1, self.cfg.v_samples - 1)
@@ -101,18 +134,20 @@ class DynamicWindowApproach:
                 is_lethal, _ = self._costmap_check(pts, costmap)
                 if is_lethal:
                   continue
-                clear = self._min_clearance(pts, obstacles)
+                clear, anom = self._min_clearance(pts, obstacles)
                 if clear < self.cfg.obstacle_margin:
                     continue  # collision candidate: reject
-                candidates.append(CandidateTrajectory(v=v, yaw_rate=wr, points=pts, min_clearance=clear))
+                candidates.append(CandidateTrajectory(v=v, yaw_rate=wr, points=pts,
+                                                      min_clearance=clear, anomaly_cost=anom))
 
         # Always offer a full stop as a safe fallback candidate
         stop_pts = self._roll_out(state, 0.0, 0.0)
         is_lethal, _ = self._costmap_check(stop_pts, costmap)
 
-        stop_clear = self._min_clearance(stop_pts, obstacles)
+        stop_clear, stop_anom = self._min_clearance(stop_pts, obstacles)
         if not is_lethal and stop_clear >= self.cfg.obstacle_margin:
-            candidates.append(CandidateTrajectory(v=0.0, yaw_rate=0.0, points=stop_pts, min_clearance=stop_clear))
+            candidates.append(CandidateTrajectory(v=0.0, yaw_rate=0.0, points=stop_pts,
+                                                  min_clearance=stop_clear, anomaly_cost=stop_anom))
         return candidates
     def _costmap_check(self, pts, costmap) -> Tuple[bool, float]:
         """Returns (is_lethal, max_cost) for a rollout against the road-boundary costmap."""
@@ -136,11 +171,11 @@ class DynamicWindowApproach:
         state: VehicleState,
         target_pose: Pose2D,
         target_speed: float,
-        
+
         obstacles: List[Obstacle],
         costmap: Optional["Costmap"] = None,
     ) -> Optional[CandidateTrajectory]:
-        candidates = self._candidates(state, obstacles,costmap)
+        candidates = self._candidates(state, obstacles, costmap, v_cap=target_speed)
         self.last_candidates = candidates 
         if not candidates:
             return None
@@ -175,8 +210,13 @@ class DynamicWindowApproach:
             lo, hi = min(vals), max(vals)
             return [1.0 if hi - lo < 1e-9 else (v - lo) / (hi - lo) for v in vals]
 
-        hn, gn, cn, vn = (norm(heading_raw), norm(goal_raw),
-                  norm(clear_raw), norm(vel_raw))
+        # Surface-anomaly proximity cost (potholes etc.): normalized against
+        # the rollout length so the term is comparable to the other [0,1]
+        # score components regardless of horizon length.
+        anom_raw = [c.anomaly_cost / max(len(c.points), 1) for c in candidates]
+
+        hn, gn, cn, vn, an = (norm(heading_raw), norm(goal_raw),
+                  norm(clear_raw), norm(vel_raw), norm(anom_raw))
 
         scores = []
         for i, c in enumerate(candidates):
@@ -185,6 +225,7 @@ class DynamicWindowApproach:
                 + self.cfg.goal_weight * gn[i]
                 + self.cfg.clearance_weight * cn[i]
                 + self.cfg.velocity_weight * vn[i]
+                - self.cfg.clearance_weight * an[i]
             )
             if c.v < 0.3 and not arrival_mode:
                 score -= self.cfg.stall_penalty

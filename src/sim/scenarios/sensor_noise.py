@@ -5,7 +5,6 @@ from src.common.types.base import Covariance2D, FrameId, Header, Pose2D, Twist2D
 from src.common.types.config import CostmapConfig, DWAConfig, VehicleConfig
 from src.common.types.obstacle import Obstacle, ObstacleBehavior, ObstacleClass
 from src.common.types.vehicle_state import VehicleState
-from src.perception.noisy_perception import NoisyPerception
 
 from .base import Scenario, ScenarioResult, min_obstacle_clearance
 
@@ -13,6 +12,12 @@ from .base import Scenario, ScenarioResult, min_obstacle_clearance
 class SensorNoiseScenario(Scenario):
     name = "sensor_noise"
     duration_s = 18.0
+    # Perception runs the standard vision path (base-class default); this
+    # scenario injects its noise INTO that path at detection level so the
+    # robustness test covers the full camera -> vision pipeline -> planner
+    # chain. Magnitudes mirror the previous NoisyPerception injection.
+    vision_pos_noise_std = 0.4   # m, base_link position noise
+    vision_vel_noise_std = 0.2   # m/s, base_link velocity noise
 
     def configs(self) -> Tuple[VehicleConfig, CostmapConfig, DWAConfig]:
         return (
@@ -40,10 +45,6 @@ class SensorNoiseScenario(Scenario):
             velocity=Twist2D(), pose_covariance=Covariance2D(),
             velocity_covariance=Covariance2D(), confidence=1.0, is_dynamic=False,
         )]
-
-    def get_perception_module(self, provider):
-        # Inject 0.4m position noise and 0.2m/s velocity noise
-        return NoisyPerception(provider, pos_noise_std=0.4, vel_noise_std=0.2)
 
     def evaluate(self, log, v_cfg) -> ScenarioResult:
         g = self.goal()

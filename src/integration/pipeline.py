@@ -48,6 +48,7 @@ class IntegrationPipeline:
         transform_tree,
         message_bus: Optional[TypedMessageBus] = None,
         state_manager: Optional[SystemStateManager] = None,
+        acoustic_node=None,
     ):
         self.perception = perception
         self.costmap_builder = costmap_builder
@@ -58,6 +59,10 @@ class IntegrationPipeline:
         self.tf = transform_tree
         self.bus = message_bus
         self.state_manager = state_manager
+        # Optional acoustic attention node (ROADMAP #27b): publishes
+        # AttentionCues on the bus; cues never enter the costmap.
+        self.acoustic_node = acoustic_node
+        self.last_acoustic_cues = []
         self._last_replan_t = -1e9
         self.replan_interval_s = 2.0
         self._invalidation_margin = 1.5
@@ -92,6 +97,21 @@ class IntegrationPipeline:
                 status=perception_out.status,
             )
 
+            # 1b. Acoustic attention (optional): publish cues for observability
+            # and expose them to the local planner (creep-release / speed caps).
+            if self.acoustic_node is not None:
+                try:
+                    cues = self.acoustic_node.process(sensor_frame)
+                    self.last_acoustic_cues = list(cues)
+                    if self.bus is not None:
+                        for cue in cues:
+                            self.bus.publish(Topic.ACOUSTIC_CUE, cue)
+                except Exception as exc:
+                    # Acoustic attention must never take down the safety path.
+                    self.last_acoustic_cues = []
+                    if self.state_manager is not None:
+                        self.state_manager.raise_fault("acoustic_node", str(exc))
+
             # 2. Costmap
             self._current_costmap = self.costmap_builder.update(
                 obstacles=map_obstacles,
@@ -118,6 +138,12 @@ class IntegrationPipeline:
                     self._last_replan_t = now
                 elif self._current_global_path is None:
                     raise IntegrationFault("Global path unavailable")
+
+            # 3b. Hand acoustic cues to the local planner when it implements
+            # the acoustic attention contract (ROADMAP #27b).
+            if self.acoustic_node is not None and hasattr(self.local_planner, "set_acoustic_cues"):
+                self.local_planner.set_acoustic_cues(self.last_acoustic_cues)
+
             # 4. Local planning
             local_traj = self.local_planner.plan(
                 state=vehicle_state,
@@ -261,8 +287,16 @@ class IntegrationPipeline:
         if self._current_global_path is None:
             return False
         from src.common.utils.geometry import oriented_rect_clearance
+        from src.common.types.obstacle import is_surface_anomaly
         for pt in self._current_global_path.points:
             for obs in obstacles:
+                # Surface anomalies (potholes/small debris) never invalidate a
+                # route: they are handled by local planner costs. Treating
+                # them as route blockers made replanning hypersensitive to
+                # perception noise (a 2 cm pothole-estimate jitter could flip
+                # the 1.5 m clearance test and thrash the reference line).
+                if is_surface_anomaly(obs):
+                    continue
                 if oriented_rect_clearance(pt.pose.x, pt.pose.y,
                                            obs.pose.x, obs.pose.y, obs.pose.heading,
                                            obs.length, obs.width) < self._invalidation_margin:

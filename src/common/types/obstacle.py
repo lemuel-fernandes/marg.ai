@@ -40,3 +40,19 @@ class Obstacle:
     velocity_covariance: Covariance2D
     confidence: float
     is_dynamic: bool
+
+
+def is_surface_anomaly(obs: "Obstacle") -> bool:
+    """Road-surface anomalies (potholes / small static debris) are non-solid.
+
+    Single source of truth for the predicate used across the stack: they are
+    handled by planner cost terms ONLY — never by solid-obstacle geometry
+    (global-route invalidation, safety-monitor collision checks, DWA veto
+    margins). A pothole must never block a route or trip an emergency stop;
+    it only penalizes trajectories that would drive over it.
+    """
+    return obs.class_label == ObstacleClass.POTHOLE or (
+        obs.class_label == ObstacleClass.UNKNOWN
+        and not obs.is_dynamic
+        and obs.length <= 1.0
+    )

@@ -11,11 +11,15 @@ from src.integration.safety_monitor import EnvelopeSafetyMonitor
 from src.integration.scenario_runner import ScenarioRunner
 from src.local_planner.local_planner import DWALocalPlanner
 from src.mapping.costmap import LocalGridCostmapBuilder
+from src.perception.audio_pipeline import (AcousticEvent,
+                                           AcousticPerceptionNode)
 from src.sim.python_sim import PythonSimulator
 from src.sim.scenarios.base import RunLog, Scenario, ScenarioResult
 
 # Advanced Metrics Imports
-from src.sim.metrics import calculate_path_efficiency, calculate_avg_jerk, calculate_min_ttc
+from src.sim.metrics import (calculate_path_efficiency, calculate_avg_jerk,
+                             calculate_min_ttc, calculate_min_ttc_overall,
+                             ttc_gate_failure)
 
 
 class ScenarioExecutor:
@@ -36,8 +40,38 @@ class ScenarioExecutor:
         latest_path = {}
         bus.subscribe(Topic.GLOBAL_PATH, lambda p: latest_path.update({"path": p}))
 
-        # Use the scenario's perception module (supports ground truth or noisy)
-        perception_module = sc.get_perception_module(lambda: sc.obstacles_at(clock["t"]))
+        # Use the scenario's perception module (supports ground truth, noisy,
+        # or — when the scenario opts in via `use_vision_perception` — the
+        # synthetic camera -> vision pipeline path with GT passthrough for
+        # non-visible obstacles).
+        provider = lambda: sc.obstacles_at(clock["t"])
+        if getattr(sc, "use_vision_perception", False):
+            import math as _math
+            import numpy as _np
+            from src.perception.vision_node import VisionPerceptionNode
+
+            # 640x480 pinhole, ~90 deg horizontal FOV, camera co-located with
+            # base_link looking forward (T = 0).
+            K = _np.array([[320.0, 0.0, 320.0],
+                           [0.0, 320.0, 240.0],
+                           [0.0, 0.0, 1.0]])
+            R_c2v = _np.array([[0.0, 0.0, 1.0],
+                               [-1.0, 0.0, 0.0],
+                               [0.0, -1.0, 0.0]])
+            RT = _np.column_stack([R_c2v, _np.zeros(3)])
+            perception_module = VisionPerceptionNode(
+                obstacles_provider=provider,
+                camera_intrinsic=K,
+                camera_extrinsics_rt=RT,
+                transform_tree=tf,
+                fov_rad=_math.atan2(K[0, 2], K[0, 0]),
+                # Optional sensor-grade noise (scenario opt-in, e.g.
+                # sensor_noise): injected into vision-path reconstructions.
+                pos_noise_std=getattr(sc, "vision_pos_noise_std", 0.0),
+                vel_noise_std=getattr(sc, "vision_vel_noise_std", 0.0),
+            )
+        else:
+            perception_module = sc.get_perception_module(provider)
 
         pipeline = IntegrationPipeline(
             perception=perception_module,
@@ -46,11 +80,22 @@ class ScenarioExecutor:
                 road_network=sc.road_network() if hasattr(sc, "road_network") else None,
             ),
             global_planner=AStarGlobalPlanner(target_speed=v_cfg.max_speed),
-            local_planner=DWALocalPlanner(v_cfg, dwa_cfg),
+            local_planner=(
+                sc.get_local_planner(v_cfg, dwa_cfg)
+                if hasattr(sc, "get_local_planner")
+                else DWALocalPlanner(v_cfg, dwa_cfg)
+            ),
             controller=PurePursuitController(v_cfg),
             safety_monitor=EnvelopeSafetyMonitor(v_cfg),
             transform_tree=tf,
             message_bus=bus,
+            # ROADMAP #27b: opt-in acoustic attention via a scenario-level
+            # `acoustic_events()` provider (synthetic event injection — no
+            # real audio hardware needed).
+            acoustic_node=(
+                AcousticPerceptionNode(sc.acoustic_events())
+                if hasattr(sc, "acoustic_events") else None
+            ),
         )
 
         # Setup Dashboard if live=True
@@ -85,6 +130,7 @@ class ScenarioExecutor:
             global_path=latest_path.get("path"),
             emergency_stops=metrics.emergency_stops,
         )
+        self.last_run_log = log  # retained for post-run metric analysis
 
         result = sc.evaluate(log, v_cfg)
 
@@ -97,6 +143,21 @@ class ScenarioExecutor:
         result.metrics["avg_jerk_mps3"] = avg_jerk
         if min_ttc > 0:
             result.metrics["min_ttc_s"] = min_ttc
+        # Unfiltered classic TTC minimum, for context alongside the
+        # response-aware min_ttc_s (which excludes samples during a correct
+        # braking response).
+        min_ttc_all = calculate_min_ttc_overall(log, sc.obstacles_at)
+        if min_ttc_all > 0:
+            result.metrics["min_ttc_overall_s"] = min_ttc_all
+
+        # Response-aware TTC gate: a low unresponded min TTC means the system
+        # failed to react to a closing threat. Opt-in per scenario via the
+        # ``min_ttc_gate_s`` attribute (None/absent disables the gate).
+        gate_threshold = getattr(sc, "min_ttc_gate_s", None)
+        gate_failure = ttc_gate_failure(min_ttc, gate_threshold)
+        if gate_failure:
+            result.failures.append(gate_failure)
+            result.passed = False
 
         print(f"[Scenario:{result.name}] {'PASS' if result.passed else 'FAIL'}")
         for k, v in result.metrics.items():

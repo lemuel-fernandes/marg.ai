@@ -30,6 +30,11 @@ class TransformTree:
     def __init__(self):
         self._ego_state: VehicleState | None = None
 
+    @property
+    def ego_state(self) -> VehicleState | None:
+        """Latest ego state pushed via update_ego_state (read-only access)."""
+        return self._ego_state
+
     def update_ego_state(self, ego_state: VehicleState) -> None:
         self._ego_state = ego_state
 

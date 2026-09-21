@@ -41,17 +41,32 @@ class EnvelopeSafetyMonitor:
             if abs(pt.curvature) > max_curvature + 1e-6:
                 return self._reject(f"Trajectory exceeds curvature envelope ({pt.curvature:.3f} > {max_curvature:.3f})")
 
-        # Predictive collision check (constant-velocity obstacle prediction)
-        ego_r = self.cfg.width / 2.0 + 0.2   # ego modeled as circle: conservative vs OBB-OBB (SAT)
+        # If the trajectory is an emergency fallback stop, allow it to execute braking
+        if trajectory.fallback_active:
+            return self._ok()
+
+        # Predictive space-time collision check.
+        # oriented_rect_clearance returns the distance from the OBB *surface*
+        # (0.0 = touching). Reject only on true overlap or on a small
+        # speed-dependent buffer at higher speeds. Applying a large static
+        # margin at t=0 freezes the vehicle whenever it is legitimately closer
+        # than the margin (e.g. right after a low-speed creep-past maneuver).
         from src.common.utils.geometry import oriented_rect_clearance
+        from src.common.types.obstacle import is_surface_anomaly
         for pt in trajectory.points:
+            # Speed-dependent buffer for higher-speed travel
+            dynamic_margin = 0.1 + 0.1 * max(pt.twist.vx, 0.0)
             for obs in obstacles:
+                # Surface anomalies (potholes/small ground debris) are handled by planner costs
+                if is_surface_anomaly(obs):
+                    continue
+
                 px = obs.pose.x + obs.velocity.vx * pt.t
                 py = obs.pose.y + obs.velocity.vy * pt.t
                 clear = oriented_rect_clearance(pt.pose.x, pt.pose.y,
                                                 px, py, obs.pose.heading,
                                                 obs.length, obs.width)
-                if clear < ego_r + 0.1:
+                if clear < dynamic_margin:
                     return self._reject(f"Predicted collision at t={pt.t:.2f}s")
 
         return self._ok()

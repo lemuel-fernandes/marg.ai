@@ -29,7 +29,23 @@ class PlannerConfig:
     target_speed: float = 5.0
     
 
-@dataclass(frozen=True)
+@dataclass
+class PredictionConfig:
+    """Predictive-corridor stamping for the costmap.
+
+    Closing dynamic actors are swept forward (constant velocity) over the
+    horizon and stamped as elevated (NOT lethal) cost, so the global planner
+    schedules maneuvers around where actors *will be* — e.g. delaying an
+    overtake until an oncoming vehicle's corridor has passed — without
+    hard-blocking local maneuvering (cost stays below the lethal threshold).
+    """
+    horizon_s: float = 5.0
+    step_s: float = 0.5
+    corridor_cost: float = 0.55
+    min_speed_mps: float = 1.0
+
+
+@dataclass
 class DWAConfig:
     horizon_s: float = 2.5
     dt: float = 0.1
@@ -37,7 +53,7 @@ class DWAConfig:
     yaw_rate_samples: int = 11
     max_yaw_rate: float = 1.0
     heading_weight: float = 1.0
-    goal_weight: float = 1.5
+    # goal_weight is defined further down (0.5) — the last field wins in a dataclass
     clearance_weight: float = 0.8
     velocity_weight: float = 1.0
     obstacle_margin: float = 2.5      # <--- CHANGED: Must be > Safety Monitor margin (2.25m)

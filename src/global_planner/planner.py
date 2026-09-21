@@ -86,7 +86,7 @@ class AStarGlobalPlanner(GlobalPlanner):
 
         for i, rc in enumerate(grid_path):
             pose = self._grid_to_meters(rc, costmap)
-            
+
             # Calculate heading based on next point
             if i < len(grid_path) - 1:
                 next_rc = grid_path[i+1]

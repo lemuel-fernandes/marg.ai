@@ -1,11 +1,11 @@
 import math
 import os
-from typing import List
+from typing import List, Optional
 
 from src.common.types.base import FrameId, Header, Pose2D, Twist2D
 from src.common.types.config import DWAConfig, VehicleConfig
 from src.common.types.costmap import Costmap
-from src.common.types.obstacle import Obstacle
+from src.common.types.obstacle import Obstacle, is_surface_anomaly
 from src.common.types.path import GlobalPath
 from src.common.types.trajectory import LocalTrajectory, TrajectoryPoint
 from src.common.types.vehicle_state import VehicleState
@@ -57,13 +57,19 @@ class DWALocalPlanner:
         if self._arrived:
             return goal, 0.0
 
-        # FIX: Final-Approach Creep Mode (< 10 m)
-        # Aim directly at the goal and cap speed to a creep profile.
-        if dist_goal < 10.0:
+        # FIX: Final-Approach Creep Mode (< 14 m)
+        # Aim directly at the goal and cap speed to a creep profile. The
+        # radius must cover the full comfortable-braking distance from cruise
+        # speed (the DWA window can only decelerate ~2 m/s^2, so a cap that
+        # engages inside the stopping distance cannot prevent overshoot).
+        if dist_goal < 14.0:
             # Brake against the distance available in the vehicle's current
-            # heading, not just Euclidean distance to the goal.
+            # heading, not just Euclidean distance to the goal. Use the
+            # comfortable decel (1.2 m/s^2) for the envelope, not max braking:
+            # a max-brake envelope releases the cap until ~0.5 m from the goal,
+            # which the controller cannot track and the vehicle overshoots.
             braking_speed = math.sqrt(
-                2.0 * abs(self.vcfg.min_acceleration)
+                2.0 * 1.2
                 * max(dot - 0.5, 0.0)
             ) if dot > 0.5 else 0.0
             creep = min(2.5, math.sqrt(2.0 * 1.2 * max(dist_goal - 0.3, 0.0)))
@@ -84,7 +90,7 @@ class DWALocalPlanner:
                 min_dist = d
                 seg_idx = i
 
-        a_comfort = 2.0
+        a_comfort = 1.2
         speed_cap = math.sqrt(2.0 * a_comfort * max(dist_goal - 0.5, 0.0))
 
         acc = 0.0
@@ -100,12 +106,65 @@ class DWALocalPlanner:
 
         return target, min(speed, speed_cap)
 
+    def _corridor_speed_cap(self, state: VehicleState, obstacles: List[Obstacle]) -> Optional[float]:
+        """Oncoming-corridor guard for the overtake decision.
+
+        While the ego is laterally offset into the oncoming lane (an overtake
+        in progress), an approaching oncoming actor's CV corridor would cross
+        the ego within the DWA horizon. Pulling out into that corridor is a
+        scheduling error no amount of local reactivity can repair (the DWA
+        horizon is shorter than the closing geometry, so the "wait" answer
+        must happen BEFORE committing to the wrong lane). Cap the target
+        speed to stay behind the truck until the corridor is clear.
+        """
+        vx = state.twist.vx
+        if vx < 0.5:
+            return None
+        c, s = math.cos(state.pose.heading), math.sin(state.pose.heading)
+        horizon_s = self.cfg.horizon_s
+        for obs in obstacles:
+            if not obs.is_dynamic or is_surface_anomaly(obs):
+                continue
+            dx = obs.pose.x - state.pose.x
+            dy = obs.pose.y - state.pose.y
+            fwd = dx * c + dy * s
+            lat = -dx * s + dy * c
+            # Oncoming: significant closing velocity in the ego-forward axis.
+            rel_f = vx - (obs.velocity.vx * c + obs.velocity.vy * s)
+            if fwd <= 0.0 or rel_f <= 1.0:
+                continue
+            # Where is the actor when it reaches the ego's lateral line?
+            # Use the actor's own motion only (oncoming actors don't steer
+            # around us here; conservative for head-on geometry).
+            t_meet = fwd / rel_f
+            if t_meet > horizon_s + 1.0:
+                continue
+            # Actor must also actually occupy the ego's lateral line region
+            # as it passes (it will cross our lane).
+            lat_at_meet = lat + (-obs.velocity.vx * s + obs.velocity.vy * c) * t_meet
+            if abs(lat_at_meet) > 1.5:
+                continue
+            # Meeting within the horizon on our lane: don't be in the
+            # oncoming lane when it arrives — cap speed low so the overtake
+            # is aborted/deferred (stay behind the truck).
+            return 0.0
+        return None
+
     def plan(self, state, global_path: GlobalPath, costmap: Costmap, obstacles: List[Obstacle]) -> LocalTrajectory:
         target, speed = self._lookahead_target(state, global_path)
+        corridor_cap = self._corridor_speed_cap(state, obstacles)
+        if corridor_cap is not None:
+            speed = min(speed, corridor_cap)
         best = self.dwa.plan(state, target, speed, obstacles, costmap=costmap)
 
         if best is None:
-            return self.emergency_stop(state)
+            # No DWA candidate survived the margin filter (e.g. transient
+            # yield under time pressure). Return a controlled strong-brake
+            # ramp: the safety monitor space-time-validates it like any other
+            # trajectory, so a genuinely unsafe ramp still escalates to a
+            # true emergency stop, while a safe ramp executes as a normal
+            # (non-emergency) harsh stop.
+            return self._strong_brake(state)
 
         points: List[TrajectoryPoint] = [
             TrajectoryPoint(
@@ -135,6 +194,42 @@ class DWALocalPlanner:
             fallback_active=False,
             reason="dwa optimal candidate",
             debug_candidates=getattr(self.dwa, 'last_candidates', [])
+        )
+
+    def _strong_brake(self, state: VehicleState) -> LocalTrajectory:
+        """Controlled strong-brake ramp along the current heading.
+
+        Unlike `emergency_stop`, this is NOT flagged fallback_active: the
+        safety monitor space-time-validates it and the controller executes a
+        normal (harsh) stop instead of latching emergency-stop mode.
+        """
+        dt = 0.1
+        v0 = max(state.twist.vx, 0.0)
+        a_brake = 2.0  # strong but within the comfort envelope
+        n = int(math.ceil(v0 / a_brake / dt)) + 2
+        x, y, th = state.pose.x, state.pose.y, state.pose.heading
+        ux, uy = math.cos(th), math.sin(th)
+        points: List[TrajectoryPoint] = []
+        s = 0.0
+        next_v = v0
+        for i in range(n + 1):
+            v = next_v
+            next_v = max(v0 - a_brake * (i + 1) * dt, 0.0)
+            points.append(TrajectoryPoint(
+                t=i * dt,
+                pose=Pose2D(x=x + s * ux, y=y + s * uy, heading=th),
+                twist=Twist2D(vx=v, vy=0.0, yaw_rate=0.0),
+                curvature=0.0,
+                acceleration=(v - next_v) / dt if v > 1e-3 else 0.0,
+            ))
+            s += v * dt
+        return LocalTrajectory(
+            header=Header(state.header.stamp, FrameId.MAP, "dwa_local_planner"),
+            points=points,
+            cost=0.0,
+            is_safe=True,
+            fallback_active=False,
+            reason="No viable candidate, strong brake",
         )
 
     def emergency_stop(self, state: VehicleState) -> LocalTrajectory:

@@ -16,6 +16,9 @@ COW_VY = 4.0         # <--- CHANGED: Faster crossing (was 2.0) to prevent perman
 class CrossingAnimalScenario(Scenario):
     name = "crossing_animal"
     duration_s = 14.0
+    # Response-aware TTC gate (s): fail if the ego fails to react to a
+    # closing threat (see src/sim/metrics.py::ttc_gate_failure).
+    min_ttc_gate_s = 0.25
 
     def configs(self) -> Tuple[VehicleConfig, CostmapConfig, DWAConfig]:
         return (

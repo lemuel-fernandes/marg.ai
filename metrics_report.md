@@ -1,5 +1,5 @@
 # PathSense Evaluation Metrics Report
-**Generated:** 2026-09-10 16:12:37
+**Generated:** 2026-09-20 20:59:37
 
 ## Overall Status: ALL PASS
 
@@ -7,45 +7,84 @@
 
 ### Static Obstacle
 - **Status:** PASS
-- **Final Dist M:** 0.66
-- **Min Clearance M:** 3.18
+- **Final Dist M:** 1.18
+- **Min Clearance M:** 2.79
 - **Emergency Stops:** 0.00
-- **Path Efficiency:** 96.96%
-- **Avg Jerk Mps3:** 0.97
+- **Path Efficiency:** 94.09%
+- **Avg Jerk Mps3:** 3.56
 - **Plot:** `scenario_static_obstacle.png`
 
 ### Crossing Animal
 - **Status:** PASS
-- **Final Dist M:** 0.07
-- **Min Clearance M:** 8.34
-- **Min Accel Mps2:** -3.31
-- **Max Lateral Dev M:** 0.07
-- **Rejoin T S:** 14.00
+- **Final Dist M:** 1.34
+- **Min Clearance M:** 6.00
+- **Min Accel Mps2:** -3.50
+- **Max Lateral Dev M:** 34.01
+- **Rejoin T S:** 10.30
 - **Emergency Stops:** 0.00
-- **Path Efficiency:** 100.00%
-- **Avg Jerk Mps3:** 7.18
-- **Min Ttc S:** 2.72
+- **Path Efficiency:** 98.49%
+- **Avg Jerk Mps3:** 10.24
+- **Min Ttc S:** 1.89
+- **Min Ttc Overall S:** 1.89
 - **Plot:** `scenario_crossing_animal.png`
 
 ### Multi Animal
 - **Status:** PASS
-- **Final Dist M:** 0.18
-- **Min Clearance M:** 2.49
-- **Min Accel Mps2:** -3.31
+- **Final Dist M:** 1.23
+- **Min Clearance M:** 1.40
+- **Min Accel Mps2:** -3.50
 - **Emergency Stops:** 0.00
 - **Path Efficiency:** 100.00%
-- **Avg Jerk Mps3:** 5.49
-- **Min Ttc S:** 1.34
+- **Avg Jerk Mps3:** 9.50
+- **Min Ttc Overall S:** 0.53
 - **Plot:** `scenario_multi_animal.png`
 
 ### Sensor Noise
 - **Status:** PASS
-- **Final Dist M:** 0.64
-- **Min Clearance M:** 3.24
+- **Final Dist M:** 1.02
+- **Min Clearance M:** 2.83
 - **Emergency Stops:** 0.00
-- **Path Efficiency:** 96.89%
-- **Avg Jerk Mps3:** 0.97
+- **Path Efficiency:** 95.54%
+- **Avg Jerk Mps3:** 4.26
 - **Plot:** `scenario_sensor_noise.png`
+
+### Indian Road
+- **Status:** PASS
+- **Final Dist M:** 1.51
+- **Min Clearance M:** 0.49
+- **Min Accel Mps2:** -3.50
+- **Emergency Stops:** 0.00
+- **Path Efficiency:** 99.71%
+- **Avg Jerk Mps3:** 9.16
+- **Min Ttc S:** 4.67
+- **Min Ttc Overall S:** 0.01
+- **Plot:** `scenario_indian_road.png`
+
+### City Roads
+- **Status:** PASS
+- **Final Dist M:** 2.18
+- **Min Clearance M:** 1.20
+- **Min Accel Mps2:** -3.50
+- **Emergency Stops:** 5.00
+- **Path Efficiency:** 85.24%
+- **Avg Jerk Mps3:** 2.51
+- **Min Ttc S:** 0.81
+- **Min Ttc Overall S:** 0.80
+- **Plot:** `scenario_city_roads.png`
+
+### Occluded Siren
+- **Status:** PASS
+- **Final Dist M:** 2.04
+- **Min Clearance M:** 0.86
+- **Min Accel Mps2:** -3.50
+- **Emergency Stops:** 2.00
+- **Max Hold Speed Mps:** 0.48
+- **Post Siren Progress M:** 14.35
+- **Path Efficiency:** 95.30%
+- **Avg Jerk Mps3:** 2.53
+- **Min Ttc S:** 0.86
+- **Min Ttc Overall S:** 0.53
+- **Plot:** `scenario_occluded_siren.png`
 
 ## Architectural Notes for Judges
 - **Safety Monitor:** Independent envelope checking prevents physical limit violations.

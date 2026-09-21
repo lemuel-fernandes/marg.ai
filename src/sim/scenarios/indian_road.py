@@ -107,6 +107,9 @@ def _darting_dog(t: float):
 class IndianRoadScenario(Scenario):
     name = "indian_road"
     duration_s = 60.0 
+    # Response-aware TTC gate (s): fail if the ego fails to react to a
+    # closing threat (see src/sim/metrics.py::ttc_gate_failure).
+    min_ttc_gate_s = 0.25
 
     def configs(self) -> Tuple[VehicleConfig, CostmapConfig, DWAConfig]:
         # FIX: Expanded costmap to 200x100 so the goal at X=75 is never out of bounds.

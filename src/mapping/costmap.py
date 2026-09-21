@@ -6,9 +6,9 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from src.common.types.base import FrameId, Header, Pose2D
-from src.common.types.config import CostmapConfig
+from src.common.types.config import CostmapConfig, PredictionConfig
 from src.common.types.costmap import Costmap
-from src.common.types.obstacle import Obstacle
+from src.common.types.obstacle import Obstacle, is_surface_anomaly
 
 
 @dataclass
@@ -27,9 +27,11 @@ class LocalGridCostmapBuilder:
     It exists to give the integration layer a valid typed Costmap.
     """
 
-    def __init__(self, cfg: CostmapConfig, road_network: Optional[RoadNetwork] = None):
+    def __init__(self, cfg: CostmapConfig, road_network: Optional[RoadNetwork] = None,
+                 prediction_cfg: Optional[PredictionConfig] = None):
         self.cfg = cfg
         self.road_network = road_network
+        self.prediction_cfg = prediction_cfg or PredictionConfig()
         self._static_grid: Optional[np.ndarray] = None
         self._static_origin: Optional[Tuple[float, float]] = None
 
@@ -65,6 +67,12 @@ class LocalGridCostmapBuilder:
                 origin_x=origin_x,
                 origin_y=origin_y,
             )
+
+        # Predictive corridors: sweep closing dynamic actors forward and stamp
+        # elevated (non-lethal) cost where they will be, so the global planner
+        # schedules maneuvers around predicted occupancy — an overtake waits
+        # for an oncoming corridor to pass instead of meeting it mid-road.
+        self._stamp_prediction_corridors(data, obstacles, origin_x, origin_y)
 
         header = Header(
             stamp=stamp,
@@ -102,9 +110,29 @@ class LocalGridCostmapBuilder:
                 )
                 distance = np.minimum(distance, segment_distance)
 
-        return np.where(distance > self.road_network.half_width, 1.0, 0.0).astype(np.float32)
+        # Lethal outside the road, plus a shallow on-road cost gradient that
+        # grows toward the road edge. A* minimizes path cost, so with a flat
+        # free interior it cuts chords across curve insides and the "shortest"
+        # route hugs the road boundary — the global reference line then runs
+        # off-road at corners (and across the opposite road at intersections)
+        # and drags the local planner out of the corridor with it (observed as
+        # the city_roads boundary violation at the double arc). A gradient
+        # that is cheapest at the centerline pulls routes into the middle of
+        # the carriageway, leaving edge slack for local maneuvers. The peak
+        # (0.24) stays far below A*'s 3.5x off-road edge cost, so real
+        # obstacles and the road mask still dominate routing decisions.
+        road_cost = np.clip(distance / self.road_network.half_width, 0.0, 1.0) * 0.24
+        return np.where(distance > self.road_network.half_width, 1.0, road_cost).astype(np.float32)
 
     def _add_obstacle(self, data, obs, origin_x, origin_y):
+        # Surface anomalies (potholes, small debris) are non-solid: they are
+        # handled exclusively by the local planner's cost terms. Stamping them
+        # as lethal here makes A* re-route the global path around them — and
+        # since the stamped footprint depends on the perceived anomaly size,
+        # the route (and hence the whole downstream plan) becomes sensitive to
+        # detection-size noise. Every other module already excludes them.
+        if is_surface_anomaly(obs):
+            return
         height, width = data.shape
         extent = max(obs.length, obs.width) / 2.0 + self.cfg.inflation_radius
         cx = int(round((obs.pose.x - origin_x) / self.cfg.resolution))
@@ -129,3 +157,41 @@ class LocalGridCostmapBuilder:
         cost[inside] = 1.0
         window = data[y0:y1 + 1, x0:x1 + 1]
         np.maximum(window, cost, out=window)
+
+    def _stamp_prediction_corridors(self, data, obstacles, origin_x, origin_y):
+        """Stamp CV-predicted corridors of closing dynamic actors.
+
+        For each dynamic obstacle moving toward the ego region, sweep its
+        footprint forward over the horizon and write ``corridor_cost`` into
+        the swept cells (never lethal — the local planners must retain the
+        freedom to execute an emergency maneuver through a corridor if the
+        prediction turns out wrong; the cost only biases route *scheduling*).
+        """
+        if not obstacles:
+            return
+        pc = self.prediction_cfg
+        height, width = data.shape
+        res = self.cfg.resolution
+        n_steps = max(1, int(round(pc.horizon_s / pc.step_s)))
+
+        for obs in obstacles:
+            if not obs.is_dynamic or is_surface_anomaly(obs):
+                continue
+            speed = math.hypot(obs.velocity.vx, obs.velocity.vy)
+            if speed < pc.min_speed_mps:
+                continue
+            for k in range(1, n_steps + 1):
+                t = k * pc.step_s
+                px = obs.pose.x + obs.velocity.vx * t
+                py = obs.pose.y + obs.velocity.vy * t
+                # Stamp the actor's swept footprint with a small pad.
+                extent = max(obs.length, obs.width) / 2.0 + 0.3
+                cx = int(round((px - origin_x) / res))
+                cy = int(round((py - origin_y) / res))
+                r = int(math.ceil(extent / res))
+                x0, x1 = max(0, cx - r), min(width - 1, cx + r)
+                y0, y1 = max(0, cy - r), min(height - 1, cy + r)
+                if x0 > x1 or y0 > y1:
+                    continue
+                window = data[y0:y1 + 1, x0:x1 + 1]
+                np.maximum(window, pc.corridor_cost, out=window)
