@@ -1,0 +1,40 @@
+[ScenarioRunner] Starting scenario for 14.0s...
+[ScenarioRunner] Finished. Steps: 141 | Estops: 0 | Avg Latency: 8.88ms
+[WARN] harsh braking: -3.50 m/s^2
+[Scenario:multi_animal] PASS
+    final_dist_m: 1.23
+    min_clearance_m: 1.40
+    min_accel_mps2: -3.50
+    emergency_stops: 0.00
+    path_efficiency: 100.00%
+    avg_jerk_mps3: 9.50
+    min_ttc_overall_s: 0.53
+[Recorder] multi_animal: PASS -> 141 ticks
+[ScenarioRunner] Starting scenario for 60.0s...
+[ScenarioRunner] Finished. Steps: 600 | Estops: 0 | Avg Latency: 306.84ms
+[WARN] harsh braking: -3.50 m/s^2
+[Scenario:indian_road] PASS
+    final_dist_m: 1.51
+    min_clearance_m: 0.49
+    min_accel_mps2: -3.50
+    emergency_stops: 0.00
+    path_efficiency: 99.71%
+    avg_jerk_mps3: 9.16
+    min_ttc_s: 4.67
+    min_ttc_overall_s: 0.01
+[Recorder] indian_road: PASS -> 600 ticks
+[ScenarioRunner] Starting scenario for 60.0s...
+[ScenarioRunner] Finished. Steps: 600 | Estops: 8 | Avg Latency: 44.46ms
+[Scenario:city_roads] FAIL
+    final_dist_m: 2.78
+    min_clearance_m: 1.45
+    min_accel_mps2: -3.50
+    emergency_stops: 8.00
+    boundary_overshoot_m: 5.46
+    path_efficiency: 85.53%
+    avg_jerk_mps3: 3.03
+    min_ttc_s: 0.78
+    min_ttc_overall_s: 0.69
+    FAILURE: boundary violation: ego left road corridor by 5.46 m
+[Recorder] city_roads: FAIL -> 600 ticks
+[Recorder] Segment saved: data/recording/seg_b.mp4

@@ -119,7 +119,23 @@ class IndianRoadPlanner:
             # 5. Surface Anomaly Cost (Potholes, Speed Breakers)
             cost_surface = self._calc_surface_cost(traj, road_anomalies)
 
-            total_cost = cost_jerk + cost_vel + cost_lat + cost_obs + cost_surface
+            # 6. Road-edge proximity cost. After a legitimate edge squeeze
+            # (e.g. passing a parked truck blocking the lane interior), the
+            # lateral-deviation cost alone does not pull the ego back: the
+            # reference line itself may sit near the rim (A* routes hug the
+            # edge when interior cells are blocked), so d~0 means "on the
+            # rim". This term grows with lateral distance from the REFERENCE
+            # line and re-centers the ego tick by tick without fighting the
+            # obstacle-avoidance terms (dominated by them whenever an
+            # obstacle is genuinely close).
+            cost_edge = 0.0
+            for di in traj['d'][::2]:
+                ad = abs(di)
+                if ad > 1.2:
+                    cost_edge += (ad - 1.2) ** 2 * 1.2
+
+            total_cost = (cost_jerk + cost_vel + cost_lat + cost_obs
+                          + cost_surface + cost_edge)
 
             if total_cost < min_cost:
                 min_cost = total_cost

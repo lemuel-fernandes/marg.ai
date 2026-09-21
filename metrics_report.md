@@ -1,7 +1,7 @@
 # PathSense Evaluation Metrics Report
-**Generated:** 2026-09-20 20:59:37
+**Generated:** 2026-09-21 12:28:06
 
-## Overall Status: ALL PASS
+## Overall Status: FAILURES DETECTED
 
 ## Detailed Scenario Results
 
@@ -61,29 +61,31 @@
 - **Plot:** `scenario_indian_road.png`
 
 ### City Roads
-- **Status:** PASS
-- **Final Dist M:** 2.18
-- **Min Clearance M:** 1.20
+- **Status:** FAIL
+- **Final Dist M:** 2.78
+- **Min Clearance M:** 1.45
 - **Min Accel Mps2:** -3.50
-- **Emergency Stops:** 5.00
-- **Path Efficiency:** 85.24%
-- **Avg Jerk Mps3:** 2.51
-- **Min Ttc S:** 0.81
-- **Min Ttc Overall S:** 0.80
+- **Emergency Stops:** 8.00
+- **Boundary Overshoot M:** 5.46
+- **Path Efficiency:** 85.53%
+- **Avg Jerk Mps3:** 3.03
+- **Min Ttc S:** 0.78
+- **Min Ttc Overall S:** 0.69
+- **Failures:** boundary violation: ego left road corridor by 5.46 m
 - **Plot:** `scenario_city_roads.png`
 
 ### Occluded Siren
-- **Status:** PASS
-- **Final Dist M:** 2.04
-- **Min Clearance M:** 0.86
-- **Min Accel Mps2:** -3.50
-- **Emergency Stops:** 2.00
-- **Max Hold Speed Mps:** 0.48
-- **Post Siren Progress M:** 14.35
-- **Path Efficiency:** 95.30%
-- **Avg Jerk Mps3:** 2.53
-- **Min Ttc S:** 0.86
-- **Min Ttc Overall S:** 0.53
+- **Status:** FAIL
+- **Final Dist M:** 15.24
+- **Min Clearance M:** 0.78
+- **Min Accel Mps2:** -2.96
+- **Emergency Stops:** 0.00
+- **Max Hold Speed Mps:** 0.50
+- **Post Siren Progress M:** 0.52
+- **Path Efficiency:** 97.57%
+- **Avg Jerk Mps3:** 0.79
+- **Min Ttc Overall S:** 0.57
+- **Failures:** did not reach goal (dist=15.24 m), blind creep during unseen-siren hold (max 0.50 m/s), deadlocked after siren ended (progress 0.52 m)
 - **Plot:** `scenario_occluded_siren.png`
 
 ## Architectural Notes for Judges

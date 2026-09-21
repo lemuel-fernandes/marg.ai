@@ -27,7 +27,8 @@ class ScenarioExecutor:
         self.scenario = scenario
         self.live = live
 
-    def run(self, save_plot: Optional[str] = None) -> ScenarioResult:
+    def run(self, save_plot: Optional[str] = None,
+            on_bus=None) -> ScenarioResult:
         sc = self.scenario
         v_cfg, c_cfg, dwa_cfg = sc.configs()
 
@@ -36,7 +37,11 @@ class ScenarioExecutor:
 
         tf = TransformTree()
         bus = TypedMessageBus()
-        
+        # Optional observer hook: lets recorders/dashboard replay tools
+        # subscribe to telemetry before the pipeline starts publishing.
+        if on_bus is not None:
+            on_bus(bus)
+
         latest_path = {}
         bus.subscribe(Topic.GLOBAL_PATH, lambda p: latest_path.update({"path": p}))
 

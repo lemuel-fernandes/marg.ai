@@ -110,18 +110,24 @@ class LocalGridCostmapBuilder:
                 )
                 distance = np.minimum(distance, segment_distance)
 
-        # Lethal outside the road, plus a shallow on-road cost gradient that
-        # grows toward the road edge. A* minimizes path cost, so with a flat
-        # free interior it cuts chords across curve insides and the "shortest"
+        # Lethal outside the road, plus an on-road cost gradient that grows
+        # toward the road edge. A* minimizes path cost, so with a flat free
+        # interior it cuts chords across curve insides and the "shortest"
         # route hugs the road boundary — the global reference line then runs
-        # off-road at corners (and across the opposite road at intersections)
-        # and drags the local planner out of the corridor with it (observed as
-        # the city_roads boundary violation at the double arc). A gradient
-        # that is cheapest at the centerline pulls routes into the middle of
-        # the carriageway, leaving edge slack for local maneuvers. The peak
-        # (0.24) stays far below A*'s 3.5x off-road edge cost, so real
-        # obstacles and the road mask still dominate routing decisions.
-        road_cost = np.clip(distance / self.road_network.half_width, 0.0, 1.0) * 0.24
+        # on the road rim and drags the local planner out of the corridor
+        # with it (observed as the city_roads boundary violation at the
+        # double arc). The gradient is shallow through the interior and
+        # steepens sharply in the outer 25% of the half-width, so routes
+        # stay near the centerline while edge cells remain far below A*'s
+        # off-road cost (1.0 -> 3.5x edge multiplier) and below the lethal
+        # threshold, keeping legitimate edge maneuvers (squeezing past a
+        # parked truck) available when obstacles block the interior.
+        frac = np.clip(distance / self.road_network.half_width, 0.0, 1.0)
+        road_cost = np.where(
+            frac <= 0.75,
+            frac * 0.16,
+            0.12 + (frac - 0.75) / 0.25 * 0.43,
+        )
         return np.where(distance > self.road_network.half_width, 1.0, road_cost).astype(np.float32)
 
     def _add_obstacle(self, data, obs, origin_x, origin_y):
