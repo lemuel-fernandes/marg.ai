@@ -1,6 +1,24 @@
 import numpy as np
 import math
 from typing import List, Tuple, Dict, Optional
+from enum import Enum
+
+
+class LaneDiscipline(Enum):
+    """Lane discipline level on Indian roads."""
+    STRONG = "strong"      # Well-marked lanes, disciplined traffic
+    WEAK = "weak"          # Faded lanes, moderate discipline
+    NONE = "none"          # No lanes, chaotic traffic
+
+
+class RoadType(Enum):
+    """Indian road type classification."""
+    HIGHWAY = "highway"           # Multi-lane, separated
+    ARTERIAL = "arterial"         # Major road, some lanes
+    URBAN = "urban"               # City road, mixed traffic
+    VILLAGE = "village"           # Narrow, no lanes
+    MARKET = "market"             # Very narrow, pedestrian heavy
+    UNCONTROLLED_INTERSECTION = "uncontrolled_intersection"
 
 
 class IndianRoadPlanner:
@@ -13,6 +31,8 @@ class IndianRoadPlanner:
         min_side_margin: float = 0.35,
         pothole_cost: float = 500.0,
         pedestrian_safe_dist: float = 1.5,
+        lane_discipline: LaneDiscipline = LaneDiscipline.WEAK,
+        road_type: RoadType = RoadType.URBAN,
     ):
         # Motion profile constants
         self.TARGET_SPEED = target_speed  # ~40 km/h in m/s
@@ -24,6 +44,157 @@ class IndianRoadPlanner:
         self.MIN_SIDE_MARGIN = min_side_margin  # Tighter lateral tolerance for narrow gaps (meters)
         self.POTHOLE_COST = pothole_cost
         self.PEDESTRIAN_SAFE_DIST = pedestrian_safe_dist
+        
+        # Lane discipline and road type
+        self.lane_discipline = lane_discipline
+        self.road_type = road_type
+        
+        # Configure based on lane discipline
+        self._configure_lane_discipline()
+        
+        # Configure based on road type
+        self._configure_road_type()
+        
+        # Mixed traffic flow parameters
+        self.traffic_density = 0.5  # 0-1
+        self.heterogeneous_traffic = True
+        
+        # Intersection state
+        self.at_intersection = False
+        self.intersection_type = None
+        self.right_of_way = None  # 'ego', 'other', 'none'
+    
+    def _configure_lane_discipline(self):
+        """Configure planner parameters based on lane discipline level."""
+        if self.lane_discipline == LaneDiscipline.STRONG:
+            self.lane_width = 3.5
+            self.allow_overtaking_left = False
+            self.allow_overtaking_right = True
+            self.lane_centering_weight = 2.0
+            self.max_lateral_deviation = 0.8
+            self.gap_acceptance_time = 4.0
+        elif self.lane_discipline == LaneDiscipline.WEAK:
+            self.lane_width = 3.0
+            self.allow_overtaking_left = True
+            self.allow_overtaking_right = True
+            self.lane_centering_weight = 1.0
+            self.max_lateral_deviation = 1.5
+            self.gap_acceptance_time = 2.5
+        else:  # NONE
+            self.lane_width = 2.8
+            self.allow_overtaking_left = True
+            self.allow_overtaking_right = True
+            self.lane_centering_weight = 0.3
+            self.max_lateral_deviation = 2.5
+            self.gap_acceptance_time = 1.5
+    
+    def _configure_road_type(self):
+        """Configure planner parameters based on road type."""
+        if self.road_type == RoadType.HIGHWAY:
+            self.TARGET_SPEED = max(self.TARGET_SPEED, 22.22)  # 80 km/h
+            self.speed_variance = 5.0
+            self.following_distance = 3.0
+        elif self.road_type == RoadType.ARTERIAL:
+            self.TARGET_SPEED = max(self.TARGET_SPEED, 16.67)  # 60 km/h
+            self.speed_variance = 4.0
+            self.following_distance = 2.5
+        elif self.road_type == RoadType.URBAN:
+            self.TARGET_SPEED = max(self.TARGET_SPEED, 11.11)  # 40 km/h
+            self.speed_variance = 3.0
+            self.following_distance = 2.0
+        elif self.road_type == RoadType.VILLAGE:
+            self.TARGET_SPEED = min(self.TARGET_SPEED, 8.33)  # 30 km/h
+            self.speed_variance = 2.0
+            self.following_distance = 1.5
+            self.max_lateral_deviation = 2.0
+        elif self.road_type == RoadType.MARKET:
+            self.TARGET_SPEED = min(self.TARGET_SPEED, 5.56)  # 20 km/h
+            self.speed_variance = 1.5
+            self.following_distance = 1.0
+            self.max_lateral_deviation = 1.0
+        elif self.road_type == RoadType.UNCONTROLLED_INTERSECTION:
+            self.TARGET_SPEED = min(self.TARGET_SPEED, 5.56)  # 20 km/h
+            self.speed_variance = 1.0
+            self.following_distance = 1.0
+            self.max_lateral_deviation = 1.5
+    
+    def update_traffic_conditions(self, density: float, heterogeneous: bool = True):
+        """Update mixed traffic flow conditions."""
+        self.traffic_density = max(0.0, min(1.0, density))
+        self.heterogeneous_traffic = heterogeneous
+        # Adjust target speed based on traffic density
+        self.TARGET_SPEED *= (1.0 - 0.3 * self.traffic_density)
+    
+    def set_intersection_state(self, at_intersection: bool, intersection_type: str = None, right_of_way: str = None):
+        """Set intersection negotiation state."""
+        self.at_intersection = at_intersection
+        self.intersection_type = intersection_type
+        self.right_of_way = right_of_way
+        if at_intersection:
+            self.road_type = RoadType.UNCONTROLLED_INTERSECTION
+            self._configure_road_type()
+    
+    def get_lane_position_cost(self, d: float, reference_d: float = 0.0) -> float:
+        """Compute cost for lateral lane position based on discipline."""
+        deviation = abs(d - reference_d)
+        
+        if self.lane_discipline == LaneDiscipline.STRONG:
+            # Strong lanes: penalize deviation heavily
+            if deviation > self.lane_width / 2:
+                return 1000.0 * (deviation - self.lane_width / 2) ** 2
+            return self.lane_centering_weight * deviation ** 2
+        elif self.lane_discipline == LaneDiscipline.WEAK:
+            # Weak lanes: moderate centering
+            if deviation > self.max_lateral_deviation:
+                return 100.0 * (deviation - self.max_lateral_deviation) ** 2
+            return self.lane_centering_weight * deviation ** 2
+        else:  # NONE
+            # No lanes: minimal centering, only edge avoidance
+            if deviation > self.max_lateral_deviation:
+                return 50.0 * (deviation - self.max_lateral_deviation) ** 2
+            return self.lane_centering_weight * deviation ** 2
+    
+    def get_overtaking_gap(self, ego_speed: float, target_speed: float, relative_distance: float) -> bool:
+        """Determine if overtaking gap is acceptable based on discipline."""
+        if not (self.allow_overtaking_left or self.allow_overtaking_right):
+            return False
+        
+        # Time to close gap at relative speed
+        relative_speed = abs(target_speed - ego_speed)
+        if relative_speed < 0.1:
+            return False
+        
+        time_to_close = relative_distance / relative_speed
+        return time_to_close >= self.gap_acceptance_time
+    
+    def negotiate_intersection(self, ego_s: float, ego_speed: float, 
+                               other_vehicles: List[Dict]) -> Dict:
+        """
+        Negotiate right-of-way at uncontrolled intersection.
+        Returns: {'should_yield': bool, 'target_speed': float, 'reason': str}
+        """
+        if not self.at_intersection:
+            return {'should_yield': False, 'target_speed': self.TARGET_SPEED, 'reason': 'not_at_intersection'}
+        
+        # Simple right-of-way: first to arrive / right-hand rule
+        ego_distance_to_intersection = abs(ego_s)  # Simplified
+        
+        min_other_distance = float('inf')
+        for v in other_vehicles:
+            dist = abs(v.get('s', 0))
+            if dist < min_other_distance:
+                min_other_distance = dist
+        
+        if self.right_of_way == 'ego':
+            return {'should_yield': False, 'target_speed': self.TARGET_SPEED, 'reason': 'ego_has_right_of_way'}
+        elif self.right_of_way == 'other':
+            return {'should_yield': True, 'target_speed': 0.0, 'reason': 'other_has_right_of_way'}
+        else:
+            # First arrival gets right-of-way
+            if ego_distance_to_intersection < min_other_distance:
+                return {'should_yield': False, 'target_speed': self.TARGET_SPEED, 'reason': 'ego_arrived_first'}
+            else:
+                return {'should_yield': True, 'target_speed': 0.0, 'reason': 'other_arrived_first'}
 
     def generate_frenet_trajectories(
         self, 
@@ -107,19 +278,36 @@ class IndianRoadPlanner:
             # 2. Velocity Tracking Cost
             cost_vel = (v_target - traj['v_end']) ** 2
             
-            # 3. Lateral Deviation Cost (Penalize driving off-center unless necessary)
-            cost_lat = (traj['d_end']) ** 2 * 0.5
+            # 3. Lane Discipline Cost (Penalize driving off-center based on lane discipline)
+            # Use average lateral position over trajectory
+            avg_d = float(np.mean(np.abs(traj['d'])))
+            cost_lat = self.get_lane_position_cost(avg_d, reference_d=0.0)
             
-            # 4. Indian Driving Custom Logic: Dynamic Obstacle & Nudge Cost
+            # 4. Intersection Negotiation Cost
+            if self.at_intersection:
+                # Get intersection negotiation result
+                negotiation = self.negotiate_intersection(
+                    s_0, 0.0, []  # Simplified - would need actual other vehicles
+                )
+                if negotiation['should_yield']:
+                    cost_vel = (0.0 - traj['v_end']) ** 2  # Force stop
+                cost_vel *= 2.0  # Double velocity cost at intersections
+            
+            # 5. Mixed Traffic Flow Cost
+            # Reduce target speed in dense traffic
+            effective_target = v_target * (1.0 - 0.2 * self.traffic_density)
+            cost_vel = (effective_target - traj['v_end']) ** 2
+            
+            # 6. Indian Driving Custom Logic: Dynamic Obstacle & Nudge Cost
             cost_obs = self._calc_obstacle_cost(
                 traj, obstacles, escape_allowance_s=escape_allowance_s)
             if math.isinf(cost_obs):
                 continue
 
-            # 5. Surface Anomaly Cost (Potholes, Speed Breakers)
+            # 7. Surface Anomaly Cost (Potholes, Speed Breakers)
             cost_surface = self._calc_surface_cost(traj, road_anomalies)
 
-            # 6. Road-edge proximity cost. After a legitimate edge squeeze
+            # 8. Road-edge proximity cost. After a legitimate edge squeeze
             # (e.g. passing a parked truck blocking the lane interior), the
             # lateral-deviation cost alone does not pull the ego back: the
             # reference line itself may sit near the rim (A* routes hug the

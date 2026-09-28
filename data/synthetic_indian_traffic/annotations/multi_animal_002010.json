@@ -1,0 +1,75 @@
+{
+  "image_id": "multi_animal_002010",
+  "timestamp": 2.1000000000000005,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 10.5,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": -0.4890625,
+      "y_center": 0.5,
+      "width": -0.978125,
+      "height": 0.2375,
+      "confidence": 0.9,
+      "track_id": 7,
+      "distance_m": 4.5
+    },
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": 1.4890625,
+      "y_center": 0.5,
+      "width": -0.978125,
+      "height": 0.2375,
+      "confidence": 0.9,
+      "track_id": 8,
+      "distance_m": 4.5
+    }
+  ],
+  "acoustic_events": []
+}

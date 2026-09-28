@@ -22,6 +22,7 @@ from src.common.types.config import CostmapConfig, DWAConfig, VehicleConfig
 from src.common.types.obstacle import Obstacle, ObstacleBehavior, ObstacleClass
 from src.common.types.vehicle_state import VehicleState
 from src.mapping.costmap import RoadNetwork
+from src.perception.audio_pipeline import AcousticEvent, CLASS_SIREN, CLASS_HORN
 
 from .base import (
     Scenario, ScenarioResult, boundary_violation, min_obstacle_clearance,
@@ -89,6 +90,7 @@ class FreeWorldScenario(Scenario):
         self._rng = random.Random(self.seed)
         self._next_track_id = 200
         self._events = self._generate_events()
+        self._acoustic_events = self._generate_acoustic_events()
 
     # ------------------------------------------------------------------
     # World generation
@@ -176,7 +178,146 @@ class FreeWorldScenario(Scenario):
                     length=2.0, width=1.0, cls=ObstacleClass.VEHICLE,
                     dynamic=True))
 
+        # --- Additional Indian road elements ---
+        # Auto-rickshaw crossing
+        auto_s = 50.0
+        spawn_t = self._spawn_time(auto_s)
+        tid = self._next_track_id
+        self._next_track_id += 1
+        ax, ay = _point_at(auto_s)
+        ay0 = ay + rng.choice([-1.0, 1.0]) * (ROAD_HALF_WIDTH + 3.0)
+        events.append(dict(
+            kind="auto_rickshaw", spawn_t=spawn_t, end_t=spawn_t + 10.0,
+            track_id=tid, x=ax, y=ay0, vx=0.0, 
+            vy=-rng.choice([-1.0, 1.0]) * rng.uniform(2.0, 3.5),
+            length=2.8, width=1.4, cls=ObstacleClass.VEHICLE,
+            dynamic=True))
+
+        # Slow tractor in lane
+        tractor_s = 70.0
+        spawn_t = self._spawn_time(tractor_s)
+        tid = self._next_track_id
+        self._next_track_id += 1
+        tx, ty = _point_at(tractor_s)
+        events.append(dict(
+            kind="tractor", spawn_t=spawn_t, end_t=spawn_t + 25.0,
+            track_id=tid, x=tx, y=ty, 
+            vx=rng.uniform(1.5, 2.5), vy=0.0,
+            length=4.0, width=2.0, cls=ObstacleClass.VEHICLE,
+            dynamic=True))
+
+        # Cattle crossing
+        cattle_s = 85.0
+        spawn_t = self._spawn_time(cattle_s)
+        tid = self._next_track_id
+        self._next_track_id += 1
+        cx, cy = _point_at(cattle_s)
+        cy0 = cy + rng.choice([-1.0, 1.0]) * (ROAD_HALF_WIDTH + 4.0)
+        events.append(dict(
+            kind="cattle", spawn_t=spawn_t, end_t=spawn_t + 20.0,
+            track_id=tid, x=cx, y=cy0, vx=0.0,
+            vy=-rng.choice([-1.0, 1.0]) * rng.uniform(0.5, 1.2),
+            length=2.0, width=1.2, cls=ObstacleClass.ANIMAL,
+            dynamic=True))
+
+        # Construction zone (static)
+        const_ss = [35.0, 65.0]
+        for i, s in enumerate(const_ss):
+            x, y = _point_at(s)
+            h = _heading_at(s)
+            # Construction barrier on one side
+            side = rng.choice([-1.0, 1.0])
+            events.append(dict(
+                kind="construction", spawn_t=0.0, end_t=1e9, track_id=120 + i,
+                x=x + side * 3.0 * -math.sin(h), y=y + side * 3.0 * math.cos(h),
+                vx=0.0, vy=0.0, length=8.0, width=1.0, heading=h,
+                cls=ObstacleClass.UNKNOWN, dynamic=False))
+
+        # Speed breaker
+        sb_ss = [45.0, 110.0]
+        for i, s in enumerate(sb_ss):
+            x, y = _point_at(s)
+            events.append(dict(
+                kind="speed_breaker", spawn_t=0.0, end_t=1e9, track_id=130 + i,
+                x=x + rng.uniform(-0.5, 0.5), y=y + rng.uniform(-0.5, 0.5),
+                vx=0.0, vy=0.0, length=3.0, width=0.15,
+                cls=ObstacleClass.POTHOLE, dynamic=False))
+
         return events
+
+    def _generate_acoustic_events(self) -> List[AcousticEvent]:
+        """Generate acoustic events matching visual events plus ambient sounds."""
+        acoustic_events = []
+        
+        # Siren from emergency vehicle approaching from behind (occluded)
+        acoustic_events.append(AcousticEvent(
+            t_onset=5.0, t_end=15.0,
+            acoustic_class=CLASS_SIREN,
+            azimuth_rad=math.pi,  # Behind
+            snr_db=18.0
+        ))
+        
+        # Musical horn from overtaking vehicle
+        acoustic_events.append(AcousticEvent(
+            t_onset=12.0, t_end=14.0,
+            acoustic_class="musical_horn",
+            azimuth_rad=-0.5,  # Right-rear
+            snr_db=15.0
+        ))
+        
+        # Auto-rickshaw engine noise (continuous)
+        acoustic_events.append(AcousticEvent(
+            t_onset=8.0, t_end=18.0,
+            acoustic_class="auto_rickshaw",
+            azimuth_rad=0.3,  # Left-front
+            snr_db=12.0
+        ))
+        
+        # Cattle bell
+        acoustic_events.append(AcousticEvent(
+            t_onset=20.0, t_end=25.0,
+            acoustic_class="cattle_bell",
+            azimuth_rad=0.8,  # Left
+            snr_db=10.0
+        ))
+        
+        # Level crossing bell (if near railway)
+        acoustic_events.append(AcousticEvent(
+            t_onset=30.0, t_end=35.0,
+            acoustic_class="level_crossing_bell",
+            azimuth_rad=0.0,  # Front
+            snr_db=20.0
+        ))
+        
+        # Construction noise
+        acoustic_events.append(AcousticEvent(
+            t_onset=10.0, t_end=40.0,
+            acoustic_class="construction",
+            azimuth_rad=-0.2,  # Slight right
+            snr_db=14.0
+        ))
+        
+        # Two-wheeler horn
+        acoustic_events.append(AcousticEvent(
+            t_onset=25.0, t_end=26.0,
+            acoustic_class="two_wheeler",
+            azimuth_rad=-1.0,  # Right
+            snr_db=16.0
+        ))
+        
+        # Regular horn
+        acoustic_events.append(AcousticEvent(
+            t_onset=40.0, t_end=41.0,
+            acoustic_class=CLASS_HORN,
+            azimuth_rad=0.0,  # Front
+            snr_db=18.0
+        ))
+        
+        return acoustic_events
+
+    def acoustic_events(self) -> List[AcousticEvent]:
+        """Return acoustic events for this scenario."""
+        return self._acoustic_events
 
     # ------------------------------------------------------------------
     # Scenario contract

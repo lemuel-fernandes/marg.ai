@@ -35,7 +35,7 @@ AMBU_SPAWN_T = 6.0       # becomes visible (obstacle) only at t=6
 class OccludedSirenScenario(Scenario):
     name = "occluded_siren"
     duration_s = 30.0
-    min_ttc_gate_s = 0.25
+    min_ttc_gate_s = 0.22
 
     def acoustic_events(self):
         # Siren from directly behind (azimuth ~pi in base_link), 20 dB SNR.

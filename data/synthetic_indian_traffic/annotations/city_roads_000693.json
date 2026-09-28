@@ -1,0 +1,108 @@
+{
+  "image_id": "city_roads_000693",
+  "timestamp": 9.599999999999982,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 38.39999999999993,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.0046875,
+      "y_center": 0.5,
+      "width": 0.009375,
+      "height": 0.09166666666666666,
+      "confidence": 0.9,
+      "track_id": 50,
+      "distance_m": 43.902570332574506
+    },
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": -0.1,
+      "y_center": 0.5,
+      "width": -0.2,
+      "height": 0.020833333333333332,
+      "confidence": 0.9,
+      "track_id": 54,
+      "distance_m": 31.600000000000072
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -1.08671875,
+      "y_center": 0.5,
+      "width": -2.1734375,
+      "height": 0.11666666666666667,
+      "confidence": 0.9,
+      "track_id": 102,
+      "distance_m": 4.6000000000000725
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.2015625,
+      "y_center": 0.5,
+      "width": -0.403125,
+      "height": 0.020833333333333332,
+      "confidence": 0.9,
+      "track_id": 103,
+      "distance_m": 23.600000000000072
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.0546875,
+      "y_center": 0.5,
+      "width": -0.109375,
+      "height": 0.0125,
+      "confidence": 0.9,
+      "track_id": 104,
+      "distance_m": 36.60000000000007
+    }
+  ],
+  "acoustic_events": []
+}

@@ -1,0 +1,427 @@
+{
+  "image_id": "indian_road_000520",
+  "timestamp": 13.999999999999966,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 55.999999999999865,
+    "y": 1.5,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -0.0625,
+      "y_center": 0.5,
+      "width": -0.125,
+      "height": 0.8333333333333334,
+      "confidence": 0.9,
+      "track_id": 2058,
+      "distance_m": 2.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 1.4375,
+      "y_center": 0.5,
+      "width": -0.875,
+      "height": 0.8333333333333334,
+      "confidence": 0.9,
+      "track_id": 3058,
+      "distance_m": 2.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.125,
+      "y_center": 0.5,
+      "width": 0.125,
+      "height": 0.4166666666666667,
+      "confidence": 0.9,
+      "track_id": 2060,
+      "distance_m": 4.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 1.09375,
+      "y_center": 0.5,
+      "width": -0.1875,
+      "height": 0.4166666666666667,
+      "confidence": 0.9,
+      "track_id": 3060,
+      "distance_m": 4.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.25,
+      "y_center": 0.5,
+      "width": 0.084375,
+      "height": 0.2791666666666667,
+      "confidence": 0.9,
+      "track_id": 2062,
+      "distance_m": 6.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.97890625,
+      "y_center": 0.5,
+      "width": 0.0421875,
+      "height": 0.2791666666666667,
+      "confidence": 0.9,
+      "track_id": 3062,
+      "distance_m": 6.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.3125,
+      "y_center": 0.5,
+      "width": 0.0625,
+      "height": 0.20833333333333334,
+      "confidence": 0.9,
+      "track_id": 2064,
+      "distance_m": 8.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.875,
+      "y_center": 0.5,
+      "width": 0.0625,
+      "height": 0.20833333333333334,
+      "confidence": 0.9,
+      "track_id": 3064,
+      "distance_m": 8.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.35,
+      "y_center": 0.5,
+      "width": 0.05,
+      "height": 0.16666666666666666,
+      "confidence": 0.9,
+      "track_id": 2066,
+      "distance_m": 10.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.8,
+      "y_center": 0.5,
+      "width": 0.05,
+      "height": 0.16666666666666666,
+      "confidence": 0.9,
+      "track_id": 3066,
+      "distance_m": 10.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.375,
+      "y_center": 0.5,
+      "width": 0.040625,
+      "height": 0.1375,
+      "confidence": 0.9,
+      "track_id": 2068,
+      "distance_m": 12.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.75,
+      "y_center": 0.5,
+      "width": 0.040625,
+      "height": 0.1375,
+      "confidence": 0.9,
+      "track_id": 3068,
+      "distance_m": 12.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.3921875,
+      "y_center": 0.5,
+      "width": 0.034375,
+      "height": 0.12083333333333333,
+      "confidence": 0.9,
+      "track_id": 2070,
+      "distance_m": 14.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.7140625,
+      "y_center": 0.5,
+      "width": 0.034375,
+      "height": 0.12083333333333333,
+      "confidence": 0.9,
+      "track_id": 3070,
+      "distance_m": 14.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.40625,
+      "y_center": 0.5,
+      "width": 0.03125,
+      "height": 0.10416666666666667,
+      "confidence": 0.9,
+      "track_id": 2072,
+      "distance_m": 16.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.6875,
+      "y_center": 0.5,
+      "width": 0.03125,
+      "height": 0.10416666666666667,
+      "confidence": 0.9,
+      "track_id": 3072,
+      "distance_m": 16.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.4171875,
+      "y_center": 0.5,
+      "width": 0.028125,
+      "height": 0.09166666666666666,
+      "confidence": 0.9,
+      "track_id": 2074,
+      "distance_m": 18.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.6671875,
+      "y_center": 0.5,
+      "width": 0.028125,
+      "height": 0.09166666666666666,
+      "confidence": 0.9,
+      "track_id": 3074,
+      "distance_m": 18.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.425,
+      "y_center": 0.5,
+      "width": 0.025,
+      "height": 0.08333333333333333,
+      "confidence": 0.9,
+      "track_id": 2076,
+      "distance_m": 20.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.65,
+      "y_center": 0.5,
+      "width": 0.025,
+      "height": 0.08333333333333333,
+      "confidence": 0.9,
+      "track_id": 3076,
+      "distance_m": 20.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.43125,
+      "y_center": 0.5,
+      "width": 0.021875,
+      "height": 0.075,
+      "confidence": 0.9,
+      "track_id": 2078,
+      "distance_m": 22.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.6359375,
+      "y_center": 0.5,
+      "width": 0.021875,
+      "height": 0.075,
+      "confidence": 0.9,
+      "track_id": 3078,
+      "distance_m": 22.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.4375,
+      "y_center": 0.5,
+      "width": 0.021875,
+      "height": 0.07083333333333333,
+      "confidence": 0.9,
+      "track_id": 2080,
+      "distance_m": 24.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.625,
+      "y_center": 0.5,
+      "width": 0.021875,
+      "height": 0.07083333333333333,
+      "confidence": 0.9,
+      "track_id": 3080,
+      "distance_m": 24.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.4421875,
+      "y_center": 0.5,
+      "width": 0.01875,
+      "height": 0.0625,
+      "confidence": 0.9,
+      "track_id": 2082,
+      "distance_m": 26.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.615625,
+      "y_center": 0.5,
+      "width": 0.01875,
+      "height": 0.0625,
+      "confidence": 0.9,
+      "track_id": 3082,
+      "distance_m": 26.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.446875,
+      "y_center": 0.5,
+      "width": 0.01875,
+      "height": 0.058333333333333334,
+      "confidence": 0.9,
+      "track_id": 2084,
+      "distance_m": 28.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.6078125,
+      "y_center": 0.5,
+      "width": 0.01875,
+      "height": 0.058333333333333334,
+      "confidence": 0.9,
+      "track_id": 3084,
+      "distance_m": 28.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.45,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.05416666666666667,
+      "confidence": 0.9,
+      "track_id": 2086,
+      "distance_m": 30.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.6,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.05416666666666667,
+      "confidence": 0.9,
+      "track_id": 3086,
+      "distance_m": 30.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.453125,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.05,
+      "confidence": 0.9,
+      "track_id": 2088,
+      "distance_m": 32.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.59375,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.05,
+      "confidence": 0.9,
+      "track_id": 3088,
+      "distance_m": 32.000000000000135
+    },
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": 0.5,
+      "y_center": 0.5,
+      "width": 0.075,
+      "height": 0.16666666666666666,
+      "confidence": 0.9,
+      "track_id": 12,
+      "distance_m": 4.000000000000135
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.7640625,
+      "y_center": 0.5,
+      "width": 0.04375,
+      "height": 0.058333333333333334,
+      "confidence": 0.9,
+      "track_id": 102,
+      "distance_m": 7.53077406229086
+    }
+  ],
+  "acoustic_events": []
+}

@@ -45,6 +45,12 @@ The system perceives its surroundings, builds a live costmap with road-network b
 - [x] Controller / vehicle dynamics integration (Pure Pursuit + Kinematic Bicycle)
 - [x] Dashboard / visualization (Live Matplotlib Telemetry)
 - [x] Test scenario suite + evaluation metrics (8 Scenarios incl. Free World random-events mode + Auto-generated Report)
+- [x] **Multi-modal perception: Camera (YOLOv8, segmentation, depth) + Audio (GCC-PHAT DOA, horn intent)**
+- [x] **Indian traffic classes (17): auto-rickshaw, cattle, level crossing, musical horn, tractor, construction**
+- [x] **Weather/lighting degradation: monsoon, night, fog, dust storm, glare**
+- [x] **Horn-as-intent planner coupling (overtaking, lane-split, aggressive, warning, emergency)**
+- [x] **Synthetic dataset generator (YOLO/COCO format, 2580+ samples)**
+- [x] **Perception metrics: mAP@0.5, mIoU, depth RMSE, acoustic DOA accuracy**
 - [x] Demo video (`data/recording/pathsense_demo.mp4`, regenerate with `scripts/record_demo.py` + concat) + final PPT (`pathsense_ppt.pptx`, regenerate with `scripts/make_ppt.py`)
 
 ---
@@ -60,6 +66,11 @@ graph TD
 
     subgraph Perception [M2]
         P[Perception Node] -->|Detections & Tracks| M
+        A[Acoustic Node] -->|Attention Cues| M
+        CV[CV Detectors (YOLOv8)] -->|2D Detections| P
+        SEG[Segmentation] -->|Masks| P
+        DEP[Depth Estimation] -->|Depth Maps| P
+        WTH[Weather Degradation] -.->|Monsoon/Night/Fog| P
     end
 
     subgraph Mapping [M1 / Shared]
@@ -76,10 +87,16 @@ graph TD
         C[Vehicle Controller<br/>Pure Pursuit] -->|Steering / Throttle / Brake| V
     end
 
+    subgraph Audio Processing
+        A[Acoustic Node] -->|DOA + Classification| H[HornIntentAnalyzer]
+        H -->|Intent + Planner Params| LP
+    end
+
     subgraph Dashboard [M6]
         P -.->|Live Telemetry| D[Live Dashboard]
         LP -.->|DWA Candidate Cloud| D
         V -.->|Vehicle State| D
+        A -.->|Acoustic Cues| D
     end
 ```
 
@@ -98,6 +115,10 @@ graph TD
 **Perception:**
 ![OpenCV](https://img.shields.io/badge/opencv-%23white.svg?style=for-the-badge&logo=opencv&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
+![Ultralytics](https://img.shields.io/badge/YOLOv8-00FFFF?style=for-the-badge&logo=ultralytics&logoColor=black)
+
+**Audio Processing:**
+![SciPy](https://img.shields.io/badge/SciPy-8CAAE6?style=for-the-badge&logo=scipy&logoColor=white)
 
 **Dashboard / Visualization:**
 ![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)
@@ -133,7 +154,7 @@ graph TD
    ```
 
 3. **Run the Full Evaluation Suite (Headless):**
-   Generates `metrics_report.md` and trajectory plots for all 6 scenarios.
+   Generates `metrics_report.md` and trajectory plots for all 8 scenarios.
    ```bash
    python -m scripts.run_all_scenarios
    ```
@@ -143,6 +164,70 @@ graph TD
    ```bash
    python -m scripts.run_live_demo city_roads
    ```
+
+5. **Run with Weather/Lighting Conditions:**
+   ```bash
+   python -c "
+   import sys; sys.path.insert(0, '.')
+   from src.sim.executor import ScenarioExecutor
+   from src.sim.scenario_registry import REGISTRY
+   sc = REGISTRY['free_world']()
+   sc.use_vision_perception = True
+   sc.weather_condition = 'monsoon'
+   sc.time_of_day = 'day'
+   executor = ScenarioExecutor(sc)
+   result = executor.run()
+   "
+   ```
+
+6. **Run with CV Detectors + Audio:**
+   ```bash
+   python -c "
+   import sys; sys.path.insert(0, '.')
+   from src.sim.executor import ScenarioExecutor
+   from src.sim.scenario_registry import REGISTRY
+   sc = REGISTRY['occluded_siren']()
+   sc.use_vision_perception = True
+   sc.use_cv_detectors = True
+   sc.cv_detector_config = {'use_yolo': True, 'yolo_model_path': 'yolov8n.pt', 'device': 'cpu'}
+   executor = ScenarioExecutor(sc, compute_perception_metrics=True)
+   result = executor.run()
+   "
+   ```
+
+---
+
+## 📁 Key Directories
+
+```
+marg.ai/
+├── src/
+│   ├── perception/
+│   │   ├── audio_pipeline.py       # GCC-PHAT DOA, HornIntentAnalyzer
+│   │   ├── vision_node.py          # Synthetic camera + CV pipeline
+│   │   ├── vision_detector.py      # SyntheticDetector, Segmenter, Depth, Flow
+│   │   ├── yolo_detector.py        # YOLOv8Detector, training config
+│   │   ├── weather_degradation.py  # Monsoon/Night/Fog/Dust/Glare models
+│   │   └── dataset_generator.py    # Synthetic Indian traffic dataset
+│   ├── sim/
+│   │   ├── scenarios/              # 8 scenarios (free_world, indian_road, etc.)
+│   │   ├── executor.py             # Scenario runner with perception metrics
+│   │   └── perception_metrics.py   # mAP, mIoU, depth, acoustic metrics
+│   ├── local_planner/
+│   │   └── frenet_local_planner.py # Horn intent coupling
+│   └── integration/
+│       └── pipeline.py             # IntegrationPipeline
+├── data/
+│   └── synthetic_indian_traffic/   # Generated dataset (YOLO/COCO format)
+├── runs/
+│   └── detect/                     # YOLOv8 training outputs
+├── tests/
+│   └── unit/                       # 31 unit tests
+└── scripts/
+    ├── run_all_scenarios.py
+    ├── run_scenario.py
+    └── run_live_demo.py
+```
 
 ---
 

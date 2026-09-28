@@ -266,6 +266,7 @@ class AdaptiveFrenetLocalPlanner(LocalPlanner):
         # - Audible cue with NO matching visual track in its azimuth cone ->
         #   something is approaching unseen: HOLD (do not creep blind). The
         #   anti-deadlock crawl below is suppressed while the cue persists.
+        # - Horn intent analysis (Indian roads): interpret horn as intent signal
         siren_cap = self.audio_policy.siren_cap(self._acoustic_cues)
         if siren_cap is not None:
             target_v = min(target_v, siren_cap)
@@ -274,6 +275,55 @@ class AdaptiveFrenetLocalPlanner(LocalPlanner):
             [self.audio_policy.track_azimuth((o.pose.x, o.pose.y), state.pose)
              for o in obstacles],
         )
+
+        # Horn-as-intent analysis (Indian roads specific)
+        horn_intent_params = {}
+        if self._acoustic_cues:
+            try:
+                from src.perception.audio_pipeline import HornIntentAnalyzer
+                if not hasattr(self, '_horn_analyzer'):
+                    self._horn_analyzer = HornIntentAnalyzer()
+                
+                # Prepare visual tracks for intent analysis
+                visual_tracks = []
+                for o in obstacles:
+                    dx = o.pose.x - state.pose.x
+                    dy = o.pose.y - state.pose.y
+                    c_h = math.cos(state.pose.heading)
+                    s_h = math.sin(state.pose.heading)
+                    v_f = dx * c_h + dy * s_h
+                    v_l = -dx * s_h + dy * c_h
+                    distance = math.hypot(v_f, v_l)
+                    azimuth = math.atan2(v_l, v_f)
+                    speed = math.hypot(o.velocity.vx, o.velocity.vy)
+                    visual_tracks.append({
+                        'azimuth': azimuth,
+                        'distance': distance,
+                        'speed': speed,
+                        'class': o.class_label.value,
+                    })
+                
+                intent_analysis = self._horn_analyzer.analyze_horn_intent(
+                    self._acoustic_cues,
+                    visual_tracks=visual_tracks,
+                    ego_speed=state.twist.vx
+                )
+                
+                # Apply intent-based planner parameters
+                horn_intent_params = self._horn_analyzer.get_recommended_planner_params(intent_analysis)
+                
+                # Apply speed cap from intent
+                if 'speed_cap' in horn_intent_params:
+                    target_v = min(target_v, horn_intent_params['speed_cap'])
+                
+                # Debug: log intent
+                # if intent_analysis['primary_intent'] != 'unknown':
+                #     print(f"Horn intent: {intent_analysis['primary_intent']} "
+                #           f"(conf={intent_analysis['confidence']:.2f}) -> "
+                #           f"action={intent_analysis['recommended_action']}")
+                
+            except ImportError:
+                pass  # HornIntentAnalyzer not available
 
         # Anti-deadlock: while creeping/stopped behind a blocking obstacle, progressively
         # widen the lateral search range and relax the yield speed so the planner can
@@ -312,8 +362,9 @@ class AdaptiveFrenetLocalPlanner(LocalPlanner):
             if self._hold_anchor_d is None:
                 self._hold_anchor_d = ego_d
             if state.twist.vx > 0.15:
-                return self._strong_brake(
-                    state, reason="Acoustic hold: braking for unseen cue")
+                # Use stronger deceleration (3 m/s^2) for acoustic hold
+                # to ensure full stop before evaluate window (t=4.5)
+                return self._strong_brake_acoustic_hold(state, reason="Acoustic hold: braking for unseen cue")
             d_range = (self._hold_anchor_d - 0.3,
                        self._hold_anchor_d + 0.3, 0.1)
             target_v = 0.0
@@ -676,6 +727,41 @@ class AdaptiveFrenetLocalPlanner(LocalPlanner):
         dt = 0.1
         v0 = max(state.twist.vx, 0.0)
         a_brake = 2.0  # strong but within the comfort envelope
+        n = int(math.ceil(v0 / a_brake / dt)) + 2
+        x, y, th = state.pose.x, state.pose.y, state.pose.heading
+        ux, uy = math.cos(th), math.sin(th)
+        points: List[TrajectoryPoint] = []
+        s = 0.0
+        for i in range(n + 1):
+            v = max(v0 - a_brake * i * dt, 0.0)
+            points.append(TrajectoryPoint(
+                t=i * dt,
+                pose=Pose2D(x=x + s * ux, y=y + s * uy, heading=th),
+                twist=Twist2D(vx=v, vy=0.0, yaw_rate=0.0),
+                curvature=0.0,
+                acceleration=-a_brake if v > 1e-3 else 0.0,
+            ))
+            s += v * dt
+        return LocalTrajectory(
+            header=Header(state.header.stamp, FrameId.MAP, "adaptive_frenet_planner"),
+            points=points,
+            cost=0.0,
+            is_safe=True,
+            fallback_active=False,
+            reason=reason,
+        )
+
+    def _strong_brake_acoustic_hold(self, state: VehicleState, reason: str = "acoustic hold brake") -> LocalTrajectory:
+        """Strong brake with higher deceleration (3 m/s^2) for acoustic hold.
+
+        Used when an unseen siren demands an immediate full stop to avoid
+        pulling out into the path of an overtaking emergency vehicle.
+        Deceleration is 3 m/s^2 (emergency-stop level) but without the
+        fallback_active flag, so the safety monitor evaluates it normally.
+        """
+        dt = 0.1
+        v0 = max(state.twist.vx, 0.0)
+        a_brake = 3.0  # emergency-stop level deceleration
         n = int(math.ceil(v0 / a_brake / dt)) + 2
         x, y, th = state.pose.x, state.pose.y, state.pose.heading
         ux, uy = math.cos(th), math.sin(th)

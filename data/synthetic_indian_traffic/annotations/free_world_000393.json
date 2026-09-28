@@ -1,0 +1,152 @@
+{
+  "image_id": "free_world_000393",
+  "timestamp": 3.1000000000000014,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 9.75,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.3515625,
+      "y_center": 0.5,
+      "width": 0.153125,
+      "height": 0.20416666666666666,
+      "confidence": 0.9,
+      "track_id": 100,
+      "distance_m": 2.618705084669106
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.6328125,
+      "y_center": 0.5,
+      "width": 0.090625,
+      "height": 0.19583333333333333,
+      "confidence": 0.9,
+      "track_id": 110,
+      "distance_m": 8.25
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.0921875,
+      "y_center": 0.5,
+      "width": 0.0125,
+      "height": 0.029166666666666667,
+      "confidence": 0.9,
+      "track_id": 111,
+      "distance_m": 56.55257033257462
+    },
+    {
+      "class_id": 8,
+      "class_name": "pedestrian",
+      "x_center": 0.446875,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.020833333333333332,
+      "confidence": 0.9,
+      "track_id": 236,
+      "distance_m": 16.25
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.0140625,
+      "y_center": 0.5,
+      "width": 0.021875,
+      "height": 0.058333333333333334,
+      "confidence": 0.9,
+      "track_id": 239,
+      "distance_m": 32.25
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.0078125,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.07916666666666666,
+      "confidence": 0.9,
+      "track_id": 240,
+      "distance_m": 33.18824640789301
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.4203125,
+      "y_center": 0.5,
+      "width": 0.021875,
+      "height": 0.225,
+      "confidence": 0.9,
+      "track_id": 120,
+      "distance_m": 23.89164478995869
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.1,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.15,
+      "confidence": 0.9,
+      "track_id": 121,
+      "distance_m": 35.25
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.378125,
+      "y_center": 0.5,
+      "width": 0.003125,
+      "height": 0.0625,
+      "confidence": 0.9,
+      "track_id": 130,
+      "distance_m": 31.8989782388649
+    }
+  ],
+  "acoustic_events": []
+}

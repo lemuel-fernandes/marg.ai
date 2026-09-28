@@ -1,0 +1,97 @@
+{
+  "image_id": "indian_road_000857",
+  "timestamp": 21.20000000000003,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 84.80000000000013,
+    "y": 1.5,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -0.27109375,
+      "y_center": 0.5,
+      "width": -0.5421875,
+      "height": 1.0,
+      "confidence": 0.9,
+      "track_id": 2086,
+      "distance_m": 1.199999999999875
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 1.89609375,
+      "y_center": 0.5,
+      "width": -1.7921875,
+      "height": 1.0,
+      "confidence": 0.9,
+      "track_id": 3086,
+      "distance_m": 1.199999999999875
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.0546875,
+      "y_center": 0.5,
+      "width": 0.109375,
+      "height": 0.5208333333333334,
+      "confidence": 0.9,
+      "track_id": 2088,
+      "distance_m": 3.199999999999875
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 1.1796875,
+      "y_center": 0.5,
+      "width": -0.359375,
+      "height": 0.5208333333333334,
+      "confidence": 0.9,
+      "track_id": 3088,
+      "distance_m": 3.199999999999875
+    }
+  ],
+  "acoustic_events": []
+}

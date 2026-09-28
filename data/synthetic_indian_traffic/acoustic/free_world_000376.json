@@ -1,0 +1,16 @@
+[
+  {
+    "t": 41.200000000000315,
+    "acoustic_class": "construction",
+    "azimuth_rad": -0.2,
+    "confidence": 0.5573333333333333,
+    "is_persisted": true
+  },
+  {
+    "t": 41.200000000000315,
+    "acoustic_class": "horn",
+    "azimuth_rad": 0.0,
+    "confidence": 0.6160000000000001,
+    "is_persisted": true
+  }
+]

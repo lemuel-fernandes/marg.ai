@@ -1,0 +1,108 @@
+{
+  "image_id": "free_world_001650",
+  "timestamp": 25.200000000000088,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 65.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.37890625,
+      "y_center": 0.5,
+      "width": -0.7578125,
+      "height": 0.029166666666666667,
+      "confidence": 0.9,
+      "track_id": 101,
+      "distance_m": 17.363968804183855
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -8.4734375,
+      "y_center": 0.5,
+      "width": -16.946875,
+      "height": 1.0,
+      "confidence": 0.9,
+      "track_id": 111,
+      "distance_m": 1.3025703325746179
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.73359375,
+      "y_center": 0.5,
+      "width": -1.4671875,
+      "height": 0.17916666666666667,
+      "confidence": 0.9,
+      "track_id": 131,
+      "distance_m": 11.258177310130975
+    }
+  ],
+  "acoustic_events": [
+    {
+      "t": 25.200000000000088,
+      "acoustic_class": "cattle_bell",
+      "azimuth_rad": 0.8,
+      "confidence": 0.49866666666666676,
+      "is_persisted": true
+    },
+    {
+      "t": 25.200000000000088,
+      "acoustic_class": "construction",
+      "azimuth_rad": -0.2,
+      "confidence": 0.6966666666666667,
+      "is_persisted": false
+    },
+    {
+      "t": 25.200000000000088,
+      "acoustic_class": "two_wheeler",
+      "azimuth_rad": -1.0,
+      "confidence": 0.7333333333333334,
+      "is_persisted": false
+    }
+  ]
+}

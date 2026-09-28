@@ -1,0 +1,163 @@
+{
+  "image_id": "free_world_000401",
+  "timestamp": 11.799999999999974,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 31.5,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.0609375,
+      "y_center": 0.5,
+      "width": 0.00625,
+      "height": 0.008333333333333333,
+      "confidence": 0.9,
+      "track_id": 101,
+      "distance_m": 51.68815102927171
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -0.0765625,
+      "y_center": 0.5,
+      "width": -0.153125,
+      "height": 0.04583333333333333,
+      "confidence": 0.9,
+      "track_id": 111,
+      "distance_m": 34.80257033257462
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.1265625,
+      "y_center": 0.5,
+      "width": 0.021875,
+      "height": 0.058333333333333334,
+      "confidence": 0.9,
+      "track_id": 240,
+      "distance_m": 44.34848003145164
+    },
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": -0.01796875,
+      "y_center": 0.5,
+      "width": -0.0359375,
+      "height": 0.06666666666666667,
+      "confidence": 0.9,
+      "track_id": 241,
+      "distance_m": 19.82526895912708
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -0.13125,
+      "y_center": 0.5,
+      "width": -0.2625,
+      "height": 1.0,
+      "confidence": 0.9,
+      "track_id": 120,
+      "distance_m": 2.14164478995869
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -0.26171875,
+      "y_center": 0.5,
+      "width": -0.5234375,
+      "height": 0.3958333333333333,
+      "confidence": 0.9,
+      "track_id": 121,
+      "distance_m": 13.5
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.115625,
+      "y_center": 0.5,
+      "width": 0.00625,
+      "height": 0.19583333333333333,
+      "confidence": 0.9,
+      "track_id": 130,
+      "distance_m": 10.148978238864899
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.0109375,
+      "y_center": 0.5,
+      "width": 0.003125,
+      "height": 0.04583333333333333,
+      "confidence": 0.9,
+      "track_id": 131,
+      "distance_m": 44.9204965175377
+    }
+  ],
+  "acoustic_events": [
+    {
+      "t": 11.799999999999974,
+      "acoustic_class": "siren",
+      "azimuth_rad": 3.141592653589793,
+      "confidence": 0.77,
+      "is_persisted": false
+    },
+    {
+      "t": 11.799999999999974,
+      "acoustic_class": "auto_rickshaw",
+      "azimuth_rad": 0.3,
+      "confidence": 0.66,
+      "is_persisted": false
+    },
+    {
+      "t": 11.799999999999974,
+      "acoustic_class": "construction",
+      "azimuth_rad": -0.2,
+      "confidence": 0.6966666666666667,
+      "is_persisted": false
+    }
+  ]
+}

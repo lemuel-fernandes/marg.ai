@@ -1,0 +1,97 @@
+{
+  "image_id": "city_roads_001545",
+  "timestamp": 0.0,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.5,
+      "y_center": 0.5,
+      "width": 0.05,
+      "height": 0.2,
+      "confidence": 0.9,
+      "track_id": 50,
+      "distance_m": 20.0
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.4671875,
+      "y_center": 0.5,
+      "width": 0.034375,
+      "height": 0.04583333333333333,
+      "confidence": 0.9,
+      "track_id": 100,
+      "distance_m": 12.0
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.5234375,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.020833333333333332,
+      "confidence": 0.9,
+      "track_id": 101,
+      "distance_m": 25.0
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.209375,
+      "y_center": 0.5,
+      "width": 0.009375,
+      "height": 0.0125,
+      "confidence": 0.9,
+      "track_id": 102,
+      "distance_m": 43.0
+    }
+  ],
+  "acoustic_events": []
+}

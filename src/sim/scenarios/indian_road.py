@@ -114,10 +114,19 @@ class IndianRoadScenario(Scenario):
     def configs(self) -> Tuple[VehicleConfig, CostmapConfig, DWAConfig]:
         # FIX: Expanded costmap to 200x100 so the goal at X=75 is never out of bounds.
         # Reduced inflation to 1.0m so the car can physically fit past the truck.
+        # Use fixed_origin to avoid rebuilding static grid every tick.
+        # Use resolution=1.0 to reduce grid size (20,000 cells vs 80,000).
+        # Use fewer DWA samples for this mostly-straight scenario.
         return (
             VehicleConfig(max_speed=6.0, max_steer_angle=0.6, wheelbase=2.5),
-            CostmapConfig(width_m=200, height_m=100, resolution=0.5, inflation_radius=1.0),
-            DWAConfig(obstacle_margin=1.5), 
+            CostmapConfig(width_m=200, height_m=100, resolution=1.0, inflation_radius=1.0, fixed_origin=(-15.0, -50.0)),
+            DWAConfig(
+                obstacle_margin=1.5,
+                v_samples=5,
+                yaw_rate_samples=7,
+                horizon_s=2.0,
+                dt=0.1,
+            ), 
         )
 
     def initial_state(self) -> VehicleState:

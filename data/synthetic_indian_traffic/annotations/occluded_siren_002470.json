@@ -1,0 +1,60 @@
+{
+  "image_id": "occluded_siren_002470",
+  "timestamp": 6.299999999999994,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 19.75,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [],
+  "acoustic_events": [
+    {
+      "t": 6.299999999999994,
+      "acoustic_class": "siren",
+      "azimuth_rad": 3.141592653589793,
+      "confidence": 0.6453333333333333,
+      "is_persisted": true
+    }
+  ]
+}

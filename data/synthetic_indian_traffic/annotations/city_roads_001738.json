@@ -1,0 +1,75 @@
+{
+  "image_id": "city_roads_001738",
+  "timestamp": 17.199999999999974,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 68.7999999999999,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": -8.95859375,
+      "y_center": 0.5,
+      "width": -17.9171875,
+      "height": 0.5541666666666667,
+      "confidence": 0.9,
+      "track_id": 54,
+      "distance_m": 1.2000000000001023
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -1.5484375,
+      "y_center": 0.5,
+      "width": -3.096875,
+      "height": 0.0875,
+      "confidence": 0.9,
+      "track_id": 104,
+      "distance_m": 6.200000000000102
+    }
+  ],
+  "acoustic_events": []
+}

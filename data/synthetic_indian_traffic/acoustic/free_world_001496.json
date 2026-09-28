@@ -1,0 +1,16 @@
+[
+  {
+    "t": 33.2000000000002,
+    "acoustic_class": "level_crossing_bell",
+    "azimuth_rad": 0.0,
+    "confidence": 0.8066666666666666,
+    "is_persisted": false
+  },
+  {
+    "t": 33.2000000000002,
+    "acoustic_class": "construction",
+    "azimuth_rad": -0.2,
+    "confidence": 0.6966666666666667,
+    "is_persisted": false
+  }
+]

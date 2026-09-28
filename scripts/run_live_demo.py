@@ -8,8 +8,8 @@ def main():
         print(f"Unknown scenario '{name}'. Available: {list(REGISTRY)}")
         sys.exit(2)
         
-    print(f"🚀 Starting LIVE DASHBOARD for scenario: {name}")
-    print("👀 Watch the Matplotlib window. Close it to end the scenario.")
+    print(f"Starting LIVE DASHBOARD for scenario: {name}")
+    print("Watch the Matplotlib window. Close it to end the scenario.")
     ScenarioExecutor(REGISTRY[name](), live=True).run(save_plot=f"scenario_{name}.png")
 
 if __name__ == "__main__":

@@ -1,0 +1,101 @@
+{
+  "image_id": "free_world_000942",
+  "timestamp": 19.200000000000003,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 50.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.08203125,
+      "y_center": 0.5,
+      "width": -0.1640625,
+      "height": 0.016666666666666666,
+      "confidence": 0.9,
+      "track_id": 101,
+      "distance_m": 32.25767421636745
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -0.37890625,
+      "y_center": 0.5,
+      "width": -0.7578125,
+      "height": 0.1,
+      "confidence": 0.9,
+      "track_id": 111,
+      "distance_m": 16.302570332574618
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.1765625,
+      "y_center": 0.5,
+      "width": -0.353125,
+      "height": 0.07916666666666666,
+      "confidence": 0.9,
+      "track_id": 131,
+      "distance_m": 25.89570492476605
+    }
+  ],
+  "acoustic_events": [
+    {
+      "t": 19.200000000000003,
+      "acoustic_class": "auto_rickshaw",
+      "azimuth_rad": 0.3,
+      "confidence": 0.528,
+      "is_persisted": true
+    },
+    {
+      "t": 19.200000000000003,
+      "acoustic_class": "construction",
+      "azimuth_rad": -0.2,
+      "confidence": 0.6966666666666667,
+      "is_persisted": false
+    }
+  ]
+}
