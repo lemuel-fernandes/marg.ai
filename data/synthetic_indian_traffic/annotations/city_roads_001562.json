@@ -1,0 +1,64 @@
+{
+  "image_id": "city_roads_001562",
+  "timestamp": 18.19999999999999,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 72.79999999999995,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -4.81796875,
+      "y_center": 0.5,
+      "width": -9.6359375,
+      "height": 0.24166666666666667,
+      "confidence": 0.9,
+      "track_id": 104,
+      "distance_m": 2.2000000000000455
+    }
+  ],
+  "acoustic_events": []
+}

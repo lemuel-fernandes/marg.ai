@@ -1,0 +1,119 @@
+{
+  "image_id": "free_world_001303",
+  "timestamp": 1.0999999999999999,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 4.75,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.4546875,
+      "y_center": 0.5,
+      "width": 0.0625,
+      "height": 0.08333333333333333,
+      "confidence": 0.9,
+      "track_id": 100,
+      "distance_m": 6.52702547514642
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.5828125,
+      "y_center": 0.5,
+      "width": 0.05625,
+      "height": 0.12083333333333333,
+      "confidence": 0.9,
+      "track_id": 110,
+      "distance_m": 13.25
+    },
+    {
+      "class_id": 8,
+      "class_name": "pedestrian",
+      "x_center": 0.5859375,
+      "y_center": 0.5,
+      "width": 0.0125,
+      "height": 0.016666666666666666,
+      "confidence": 0.9,
+      "track_id": 284,
+      "distance_m": 21.25
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.528125,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.17083333333333334,
+      "confidence": 0.9,
+      "track_id": 120,
+      "distance_m": 31.320906488758553
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.0890625,
+      "y_center": 0.5,
+      "width": 0.015625,
+      "height": 0.15416666666666667,
+      "confidence": 0.9,
+      "track_id": 121,
+      "distance_m": 34.25
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": 0.3859375,
+      "y_center": 0.5,
+      "width": 0.003125,
+      "height": 0.05416666666666667,
+      "confidence": 0.9,
+      "track_id": 130,
+      "distance_m": 36.963418151407
+    }
+  ],
+  "acoustic_events": []
+}

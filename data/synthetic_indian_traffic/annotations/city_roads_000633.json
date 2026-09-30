@@ -1,0 +1,108 @@
+{
+  "image_id": "city_roads_000633",
+  "timestamp": 8.499999999999986,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 33.99999999999994,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -0.0375,
+      "y_center": 0.5,
+      "width": -0.075,
+      "height": 0.10833333333333334,
+      "confidence": 0.9,
+      "track_id": 50,
+      "distance_m": 37.30257033257453
+    },
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": -0.05703125,
+      "y_center": 0.5,
+      "width": -0.1140625,
+      "height": 0.016666666666666666,
+      "confidence": 0.9,
+      "track_id": 54,
+      "distance_m": 36.00000000000006
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.43359375,
+      "y_center": 0.5,
+      "width": -0.8671875,
+      "height": 0.058333333333333334,
+      "confidence": 0.9,
+      "track_id": 102,
+      "distance_m": 9.000000000000057
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.1296875,
+      "y_center": 0.5,
+      "width": -0.259375,
+      "height": 0.020833333333333332,
+      "confidence": 0.9,
+      "track_id": 103,
+      "distance_m": 28.000000000000057
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.021875,
+      "y_center": 0.5,
+      "width": -0.04375,
+      "height": 0.0125,
+      "confidence": 0.9,
+      "track_id": 104,
+      "distance_m": 41.00000000000006
+    }
+  ],
+  "acoustic_events": []
+}

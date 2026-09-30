@@ -1,0 +1,83 @@
+{
+  "image_id": "free_world_001654",
+  "timestamp": 29.200000000000145,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 75.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -1.23203125,
+      "y_center": 0.5,
+      "width": -2.4640625,
+      "height": 0.07083333333333333,
+      "confidence": 0.9,
+      "track_id": 101,
+      "distance_m": 7.363968804183855
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -8.55078125,
+      "y_center": 0.5,
+      "width": -17.1015625,
+      "height": 1.0,
+      "confidence": 0.9,
+      "track_id": 131,
+      "distance_m": 1.258177310130975
+    }
+  ],
+  "acoustic_events": [
+    {
+      "t": 29.200000000000145,
+      "acoustic_class": "construction",
+      "azimuth_rad": -0.2,
+      "confidence": 0.6966666666666667,
+      "is_persisted": false
+    }
+  ]
+}

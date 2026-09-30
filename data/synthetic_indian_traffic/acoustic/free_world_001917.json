@@ -1,0 +1,16 @@
+[
+  {
+    "t": 22.200000000000045,
+    "acoustic_class": "cattle_bell",
+    "azimuth_rad": 0.8,
+    "confidence": 0.6233333333333334,
+    "is_persisted": false
+  },
+  {
+    "t": 22.200000000000045,
+    "acoustic_class": "construction",
+    "azimuth_rad": -0.2,
+    "confidence": 0.6966666666666667,
+    "is_persisted": false
+  }
+]

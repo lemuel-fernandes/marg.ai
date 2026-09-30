@@ -1,0 +1,9 @@
+[
+  {
+    "t": 4.100000000000001,
+    "acoustic_class": "siren",
+    "azimuth_rad": 3.141592653589793,
+    "confidence": 0.8066666666666666,
+    "is_persisted": false
+  }
+]

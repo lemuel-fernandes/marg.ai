@@ -1,0 +1,4 @@
+planner:
+  global_algorithm: hybrid_astar
+  local_algorithm: dwa
+  replanning_period_s: 0.2

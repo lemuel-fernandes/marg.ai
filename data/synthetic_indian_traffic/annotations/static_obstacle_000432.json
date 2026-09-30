@@ -1,0 +1,64 @@
+{
+  "image_id": "static_obstacle_000432",
+  "timestamp": 0.0,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": 0.4578125,
+      "y_center": 0.5,
+      "width": 0.084375,
+      "height": 0.1125,
+      "confidence": 0.9,
+      "track_id": 99,
+      "distance_m": 12.0
+    }
+  ],
+  "acoustic_events": []
+}

@@ -1,0 +1,8 @@
+
+train: train.txt
+val: val.txt
+nc: 16
+names: ['car', 'auto_rickshaw', 'two_wheeler', 'bus', 'truck', 
+        'tractor', 'bicycle', 'pedestrian', 'cattle', 'dog',
+        'pothole', 'speed_breaker', 'construction_barrier', 
+        'traffic_cone', 'level_crossing_gate', 'emergency_vehicle']

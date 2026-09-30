@@ -1,4 +1,4 @@
-# PathSense — Production Roadmap & Sprint Plan
+  # PathSense — Production Roadmap & Sprint Plan
 ### SIH26037 · Adaptive Path Planning & Collision Avoidance for Autonomous Vehicles on Unstructured Indian Roads
 
 **Today:** Thu, 10 Sep 2026 · **Internal deadline:** Fri, 11 Sep 2026 · **Official PS reference date:** 30 Sep 2026
@@ -167,6 +167,19 @@ Everyone reviews everyone else's PRs before merge — 2-person minimum review on
   - If a robot-car rig is feasible, port the local planner + controller to it for a physical obstacle-course demo.
   - Acceptance: only attempt if Sprints 1–3 core issues are all closed — this is a bonus, not a requirement.
 
+- **#27b [M2 + M4] (Stretch) Audio / siren-detection module ("acoustic attention")** — *Est: 1–2 days*
+  - **Motivation:** on unstructured Indian roads, sound often arrives before sight — horns from wrong-side/oncoming traffic around blind bends, ambulance sirens occluded by trucks, procession loudspeakers. A small microphone array lets the vehicle "hear around" occlusions that the camera optical fallback (`VisionPerceptionPipeline` track persistence + occlusion speed cap) cannot. This complements vision; it never replaces it.
+  - **Design sketch (new `src/perception/audio_pipeline.py`):**
+    1. *Capture* — 2–4 mic array @ 16 kHz; high-pass + AGC frontend.
+    2. *Features* — 25 ms frames → log-mel spectrogram; energy focus in horn/siren bands (300 Hz–4 kHz).
+    3. *Detection* — lightweight classifier over event windows: {horn, siren, rickshaw_hooter, background} (1D-CNN/MobileNet-grade on hardware; band-energy + spectral-flux heuristics in simulation). Emits class, confidence, onset/offset.
+    4. *DOA* — GCC-PHAT TDOA across mic pairs → azimuth in base_link; ±15° resolution is sufficient to bias attention.
+    5. *Fusion contract* — implement the existing `PerceptionNode` contract as `AcousticPerceptionNode`; publish `AttentionCue {azimuth, class, confidence, t_onset}` on a new `Topic.ACOUSTIC_CUE`.
+    6. *Planner coupling* — cues (a) extend vision track persistence for tracks inside the cue azimuth cone, and (b) drop the occlusion-horizon speed cap (creep) when a siren/horn cue has no matching visual track within ~2 s — i.e., something is coming that we cannot see yet. Wire into `BehaviorStateMachine` CREEP_AND_YIELD preconditions.
+    7. *Simulation without real audio* — scenario-level synthetic event injection: a scenario declares `acoustic_events = [(t_onset, class, azimuth, snr_db)]` and the audio node consumes these in place of real captures, so the full fusion path stays deterministic and testable.
+  - **Metrics (extends #19):** per-class detection precision/recall, false alarms per minute, cue latency (onset → bus publish), end-to-end reaction (siren onset → speed-cap drop ≤ 1.0 s at the 10 Hz sim tick).
+  - Acceptance: with a synthetic siren spawned from an occluded approach in one scenario, the occlusion speed-cap engages from the acoustic cue alone; precision ≥ 80% and recall ≥ 80% on the synthetic event set; zero false-positive creep episodes across the existing 6-scenario suite (no acoustic events present).
+
 **Sprint 3 exit demo:** full pipeline runs unattended through the whole scenario suite with zero collisions and a polished live dashboard.
 
 ---
@@ -199,6 +212,7 @@ Add/edit anything missing, then we lock this and split remaining work:
 - [ ] **Demo video**
 - [ ] **Final PPT** with real results
 - [ ] (Stretch) **Small-scale hardware validation**
+- [ ] (Stretch) **Acoustic attention module** (#27b — siren/horn detection + occlusion-aware speed coupling)
 
 ---
 

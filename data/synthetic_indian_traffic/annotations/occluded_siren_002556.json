@@ -1,0 +1,83 @@
+{
+  "image_id": "occluded_siren_002556",
+  "timestamp": 5.1999999999999975,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 17.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.5,
+      "y_center": 0.5,
+      "width": 0.334375,
+      "height": 1.0,
+      "confidence": 0.9,
+      "track_id": 60,
+      "distance_m": 3.0
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.4734375,
+      "y_center": 0.5,
+      "width": 0.021875,
+      "height": 0.0625,
+      "confidence": 0.9,
+      "track_id": 62,
+      "distance_m": 48.0
+    }
+  ],
+  "acoustic_events": [
+    {
+      "t": 5.1999999999999975,
+      "acoustic_class": "siren",
+      "azimuth_rad": 3.141592653589793,
+      "confidence": 0.8066666666666666,
+      "is_persisted": false
+    }
+  ]
+}

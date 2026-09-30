@@ -1,0 +1,19 @@
+# Core dependencies
+numpy>=2.0.0
+matplotlib>=3.8.0
+imageio>=2.35.0
+imageio-ffmpeg>=0.5.0
+
+# Testing
+pytest>=8.0.0
+pytest-timeout>=2.3.0
+typeguard>=4.3.0
+
+# Optional: ML/Perception (uncomment when needed)
+# torch>=2.3.0
+# torchvision>=0.18.0
+# ultralytics>=8.2.0
+# opencv-python>=4.9.0
+# scikit-image>=0.22.0
+# scipy>=1.12.0
+# librosa>=0.10.0

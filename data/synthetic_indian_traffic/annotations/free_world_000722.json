@@ -1,0 +1,126 @@
+{
+  "image_id": "free_world_000722",
+  "timestamp": 15.099999999999962,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 39.75,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.00625,
+      "y_center": 0.5,
+      "width": -0.0125,
+      "height": 0.0125,
+      "confidence": 0.9,
+      "track_id": 101,
+      "distance_m": 41.22222443575504
+    },
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": -0.178125,
+      "y_center": 0.5,
+      "width": -0.35625,
+      "height": 0.058333333333333334,
+      "confidence": 0.9,
+      "track_id": 111,
+      "distance_m": 26.552570332574618
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.7828125,
+      "y_center": 0.5,
+      "width": -1.565625,
+      "height": 0.9666666666666667,
+      "confidence": 0.9,
+      "track_id": 130,
+      "distance_m": 2.0688993652403838
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.053125,
+      "y_center": 0.5,
+      "width": -0.10625,
+      "height": 0.05416666666666667,
+      "confidence": 0.9,
+      "track_id": 131,
+      "distance_m": 36.476181302146315
+    }
+  ],
+  "acoustic_events": [
+    {
+      "t": 15.099999999999962,
+      "acoustic_class": "siren",
+      "azimuth_rad": 3.141592653589793,
+      "confidence": 0.6160000000000001,
+      "is_persisted": true
+    },
+    {
+      "t": 15.099999999999962,
+      "acoustic_class": "musical_horn",
+      "azimuth_rad": -0.5,
+      "confidence": 0.5720000000000001,
+      "is_persisted": true
+    },
+    {
+      "t": 15.099999999999962,
+      "acoustic_class": "auto_rickshaw",
+      "azimuth_rad": 0.3,
+      "confidence": 0.66,
+      "is_persisted": false
+    },
+    {
+      "t": 15.099999999999962,
+      "acoustic_class": "construction",
+      "azimuth_rad": -0.2,
+      "confidence": 0.6966666666666667,
+      "is_persisted": false
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "image_id": "city_roads_001614",
+  "timestamp": 10.699999999999978,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 42.79999999999991,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "car",
+      "x_center": 0.0640625,
+      "y_center": 0.5,
+      "width": 0.01875,
+      "height": 0.07916666666666666,
+      "confidence": 0.9,
+      "track_id": 50,
+      "distance_m": 50.50257033257432
+    },
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": -0.15625,
+      "y_center": 0.5,
+      "width": -0.3125,
+      "height": 0.025,
+      "confidence": 0.9,
+      "track_id": 54,
+      "distance_m": 27.200000000000088
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.3046875,
+      "y_center": 0.5,
+      "width": -0.609375,
+      "height": 0.029166666666666667,
+      "confidence": 0.9,
+      "track_id": 103,
+      "distance_m": 19.200000000000088
+    },
+    {
+      "class_id": 11,
+      "class_name": "pothole",
+      "x_center": -0.09609375,
+      "y_center": 0.5,
+      "width": -0.1921875,
+      "height": 0.016666666666666666,
+      "confidence": 0.9,
+      "track_id": 104,
+      "distance_m": 32.20000000000009
+    }
+  ],
+  "acoustic_events": []
+}

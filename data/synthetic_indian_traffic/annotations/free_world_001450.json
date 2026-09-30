@@ -1,0 +1,67 @@
+{
+  "image_id": "free_world_001450",
+  "timestamp": 41.200000000000315,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 105.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [],
+  "acoustic_events": [
+    {
+      "t": 41.200000000000315,
+      "acoustic_class": "construction",
+      "azimuth_rad": -0.2,
+      "confidence": 0.5573333333333333,
+      "is_persisted": true
+    },
+    {
+      "t": 41.200000000000315,
+      "acoustic_class": "horn",
+      "azimuth_rad": 0.0,
+      "confidence": 0.6160000000000001,
+      "is_persisted": true
+    }
+  ]
+}

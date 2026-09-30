@@ -1,0 +1,23 @@
+[
+  {
+    "t": 16.19999999999996,
+    "acoustic_class": "siren",
+    "azimuth_rad": 3.141592653589793,
+    "confidence": 0.6160000000000001,
+    "is_persisted": true
+  },
+  {
+    "t": 16.19999999999996,
+    "acoustic_class": "auto_rickshaw",
+    "azimuth_rad": 0.3,
+    "confidence": 0.66,
+    "is_persisted": false
+  },
+  {
+    "t": 16.19999999999996,
+    "acoustic_class": "construction",
+    "azimuth_rad": -0.2,
+    "confidence": 0.6966666666666667,
+    "is_persisted": false
+  }
+]

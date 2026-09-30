@@ -1,0 +1,5 @@
+vehicle:
+  wheelbase_m: 2.7
+  max_speed_mps: 15.0
+  max_acceleration_mps2: 2.0
+  max_deceleration_mps2: 6.0

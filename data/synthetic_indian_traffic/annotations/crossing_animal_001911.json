@@ -1,0 +1,64 @@
+{
+  "image_id": "crossing_animal_001911",
+  "timestamp": 1.0999999999999999,
+  "image_shape": [
+    480,
+    640
+  ],
+  "camera_intrinsic": [
+    [
+      320.0,
+      0.0,
+      320.0
+    ],
+    [
+      0.0,
+      320.0,
+      240.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_extrinsic": [
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "ego_pose": {
+    "x": 5.5,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "detections": [
+    {
+      "class_id": 9,
+      "class_name": "cattle",
+      "x_center": 0.2578125,
+      "y_center": 0.5,
+      "width": 0.028125,
+      "height": 0.06666666666666667,
+      "confidence": 0.9,
+      "track_id": 7,
+      "distance_m": 16.5
+    }
+  ],
+  "acoustic_events": []
+}
