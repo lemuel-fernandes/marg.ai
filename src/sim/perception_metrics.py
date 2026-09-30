@@ -167,23 +167,116 @@ def compute_detection_metrics(gt_detections: List[Dict],
         
         tp, fp = 0, 0
         
-        for pred in preds:
-            best_iou = 0.0
-            best_gt_idx = -1
-            
-            for i, gt in enumerate(gts):
-                if gt['matched']:
-                    continue
-                iou = compute_iou_2d(pred['box'], gt['box'])
-                if iou > best_iou:
-                    best_iou = iou
-                    best_gt_idx = i
-            
-            if best_iou >= iou_threshold and best_gt_idx >= 0:
-                gts[best_gt_idx]['matched'] = True
-                tp += 1
-            else:
-                fp += 1
+        # Greedy first-come-first-served matching (identical semantics to the
+        # per-pair loop it replaces: confidence-descending preds, unmatched
+        # gts only, strict-> best update = argmax first-occurrence tie-break).
+        # Two exact evaluation strategies:
+        #  - small pooled sets: one vectorized IoU matrix (P x G);
+        #  - large pooled sets (60k+ detections pooled across 600 frames ->
+        #    billions of pairs): per-pred matching against a spatial-bin
+        #    candidate index. IoU > 0 requires box overlap, and overlapping
+        #    boxes share at least one bin cell, so pruning is exact and the
+        #    quadratic pair space is never materialized.
+        if gts and preds and len(preds) * len(gts) <= 4_000_000:
+            gt_boxes = np.asarray([gt['box'] for gt in gts], dtype=np.float64)
+            pred_boxes = np.asarray([p['box'] for p in preds], dtype=np.float64)
+            x1 = np.maximum(pred_boxes[:, None, 0], gt_boxes[None, :, 0])
+            y1 = np.maximum(pred_boxes[:, None, 1], gt_boxes[None, :, 1])
+            x2 = np.minimum(pred_boxes[:, None, 2], gt_boxes[None, :, 2])
+            y2 = np.minimum(pred_boxes[:, None, 3], gt_boxes[None, :, 3])
+            inter = np.clip(x2 - x1, 0.0, None) * np.clip(y2 - y1, 0.0, None)
+            area_p = (pred_boxes[:, 2] - pred_boxes[:, 0]) * (pred_boxes[:, 3] - pred_boxes[:, 1])
+            area_g = (gt_boxes[:, 2] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])
+            union = area_p[:, None] + area_g[None, :] - inter
+            with np.errstate(divide="ignore", invalid="ignore"):
+                iou_mat = np.where(union > 0, inter / union, 0.0)
+            gt_matched = np.zeros(len(gts), dtype=bool)
+            for p_idx, pred in enumerate(preds):
+                ious = np.where(gt_matched, -1.0, iou_mat[p_idx])
+                best_gt_idx = int(np.argmax(ious))
+                best_iou = float(ious[best_gt_idx])
+                if best_iou >= iou_threshold:
+                    gt_matched[best_gt_idx] = True
+                    gts[best_gt_idx]['matched'] = True
+                    tp += 1
+                else:
+                    fp += 1
+        elif gts and preds:
+            # Spatial-bin candidate index. IoU > 0 requires box overlap, and
+            # overlapping boxes share at least one bin cell, so the candidate
+            # set per prediction is exact. Bin edge 0.5 keeps the candidate
+            # count low even for dense static-clutter scenes (indian_road
+            # pools ~64k boxes of the same few potholes across 600 frames),
+            # and MAX_BINS routes degenerate huge boxes to a global bucket.
+            BIN = 0.5
+            MAX_BINS = 400
+
+            gt_boxes = np.asarray([gt['box'] for gt in gts], dtype=np.float64)
+
+            def _box_bins(box):
+                gx1 = int(math.floor(box[0] / BIN))
+                gx2 = int(math.floor(box[2] / BIN))
+                gy1 = int(math.floor(box[1] / BIN))
+                gy2 = int(math.floor(box[3] / BIN))
+                if (gx2 - gx1 + 1) * (gy2 - gy1 + 1) > MAX_BINS:
+                    return None
+                return [(gx, gy) for gx in range(gx1, gx2 + 1)
+                        for gy in range(gy1, gy2 + 1)]
+
+            gt_bins = {}
+            global_gts = []
+            for gi, gt in enumerate(gts):
+                keys = _box_bins(gt['box'])
+                if keys is None:
+                    global_gts.append(gi)
+                else:
+                    for k in keys:
+                        gt_bins.setdefault(k, []).append(gi)
+
+            gt_matched = np.zeros(len(gts), dtype=bool)
+            for pred in preds:
+                pb = pred['box']
+                keys = _box_bins(pb)
+                if keys is None:
+                    cand_arr = None  # degenerate pred: check every gt
+                else:
+                    seen = set()
+                    for k in keys:
+                        for gi in gt_bins.get(k, ()):
+                            seen.add(gi)
+                    if global_gts:
+                        seen.update(global_gts)
+                    if not seen:
+                        fp += 1
+                        continue
+                    cand_arr = np.fromiter(sorted(seen), dtype=np.intp,
+                                           count=len(seen))
+                if cand_arr is None:
+                    gb = gt_boxes
+                    cand_arr = np.arange(len(gts))
+                else:
+                    gb = gt_boxes[cand_arr]
+                ix1 = np.maximum(gb[:, 0], pb[0])
+                iy1 = np.maximum(gb[:, 1], pb[1])
+                ix2 = np.minimum(gb[:, 2], pb[2])
+                iy2 = np.minimum(gb[:, 3], pb[3])
+                inter = np.clip(ix2 - ix1, 0.0, None) * np.clip(iy2 - iy1, 0.0, None)
+                area_p = (pb[2] - pb[0]) * (pb[3] - pb[1])
+                area_g = (gb[:, 2] - gb[:, 0]) * (gb[:, 3] - gb[:, 1])
+                union = area_p + area_g - inter
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    ious = np.where(union > 0, inter / union, 0.0)
+                ious = np.where(gt_matched[cand_arr], -1.0, ious)
+                best_local = int(np.argmax(ious))
+                if ious[best_local] >= iou_threshold:
+                    best_gt_idx = int(cand_arr[best_local])
+                    gt_matched[best_gt_idx] = True
+                    gts[best_gt_idx]['matched'] = True
+                    tp += 1
+                else:
+                    fp += 1
+        else:
+            fp = len(preds)  # every unmatched pred is a false positive
         
         fn = sum(1 for gt in gts if not gt['matched'])
         

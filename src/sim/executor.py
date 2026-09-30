@@ -345,33 +345,63 @@ class ScenarioExecutor:
                                              gt_acoustic_per_frame,
                                              pred_acoustic_per_frame):
         """Compute perception metrics and add to result."""
-        # Flatten all frames
-        all_gt_dets = []
-        all_pred_dets = []
-        for i, (gt_frame, pred_frame) in enumerate(zip(gt_dets_per_frame, pred_dets_per_frame)):
-            for gt in gt_frame:
-                gt['frame'] = i
-                all_gt_dets.append(gt)
-            for pred in pred_frame:
-                pred['frame'] = i
-                all_pred_dets.append(pred)
-        
-        # Compute detection metrics
-        det_metrics = compute_detection_metrics(
-            all_gt_dets, all_pred_dets,
-            iou_threshold=0.5,
-            class_names=INDIAN_CLASS_NAMES
-        )
-        
+        # Detection metrics are matched PER FRAME and aggregated: the old
+        # code pooled all frames into one matching problem, which is both
+        # quadratic in the pooled set (60k+ detections per class on long
+        # scenarios — multi-minute runtimes / hangs) and semantically wrong
+        # (a frame-3 prediction could "match" a frame-500 ground truth).
+        # Same greedy matching + formulas, evaluated per frame.
+        from collections import defaultdict as _dd
+        per_class = _dd(lambda: dict(gt_count=0, tp=0, fp=0, fn=0))
+        for gt_frame, pred_frame in zip(gt_dets_per_frame, pred_dets_per_frame):
+            if not gt_frame and not pred_frame:
+                continue
+            fm = compute_detection_metrics(
+                gt_frame, pred_frame,
+                iou_threshold=0.5,
+                class_names=INDIAN_CLASS_NAMES
+            )
+            for cid, name in INDIAN_CLASS_NAMES.items():
+                tp = fm.class_tp.get(name, 0)
+                fp = fm.class_fp.get(name, 0)
+                fn = fm.class_fn.get(name, 0)
+                if tp == 0 and fp == 0 and fn == 0:
+                    continue
+                agg = per_class[cid]
+                agg['tp'] += tp
+                agg['fp'] += fp
+                agg['fn'] += fn
+                agg['gt_count'] += fm.class_gt_count.get(name, 0)
+
+        # Aggregate with the same formulas compute_detection_metrics uses
+        # (per-class AP = tp / (tp + fp); micro precision/recall/f1; mAP =
+        # mean over classes PRESENT in the pooled gt, matching the old
+        # pooled run's class set).
+        all_tp = all_fp = all_fn = 0
+        ap_per_class = {}
+        gt_class_names = set()
+        for cid, agg in per_class.items():
+            name = INDIAN_CLASS_NAMES.get(cid, f'class_{cid}')
+            tp, fp, fn = agg['tp'], agg['fp'], agg['fn']
+            all_tp += tp; all_fp += fp; all_fn += fn
+            gt_class_names.add(name)
+            ap_per_class[name] = tp / (tp + fp) if tp + fp > 0 else 0.0
+        precision = all_tp / (all_tp + all_fp) if all_tp + all_fp > 0 else 0.0
+        recall = all_tp / (all_tp + all_fn) if all_tp + all_fn > 0 else 0.0
+        f1 = (2 * precision * recall /
+              (precision + recall)) if precision + recall > 0 else 0.0
+        map_50 = (sum(ap_per_class[n] for n in gt_class_names)
+                  / len(gt_class_names)) if gt_class_names else 0.0
+
         # Add to result metrics
-        result.metrics["detection_map_50"] = det_metrics.map_50
-        result.metrics["detection_precision"] = det_metrics.precision
-        result.metrics["detection_recall"] = det_metrics.recall
-        result.metrics["detection_f1"] = det_metrics.f1
-        
-        # Per-class AP
-        for cls, ap in det_metrics.ap_per_class.items():
-            result.metrics[f"ap_{cls}"] = ap
+        result.metrics["detection_map_50"] = map_50
+        result.metrics["detection_precision"] = precision
+        result.metrics["detection_recall"] = recall
+        result.metrics["detection_f1"] = f1
+
+        # Per-class AP (classes seen in ground truth, matching the old report)
+        for name in sorted(gt_class_names):
+            result.metrics[f"ap_{name}"] = ap_per_class.get(name, 0.0)
         
         # Acoustic metrics
         if gt_acoustic_per_frame and any(gt_acoustic_per_frame):

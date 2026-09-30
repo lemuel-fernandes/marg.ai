@@ -1,4 +1,8 @@
+import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import datetime
 from src.sim.executor import ScenarioExecutor
 from src.sim.scenario_registry import REGISTRY

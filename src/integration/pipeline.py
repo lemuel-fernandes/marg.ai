@@ -286,19 +286,19 @@ class IntegrationPipeline:
     def _path_invalidated(self, obstacles) -> bool:
         if self._current_global_path is None:
             return False
-        from src.common.utils.geometry import oriented_rect_clearance
+        from src.common.utils.geometry import oriented_rect_clearance_batch
         from src.common.types.obstacle import is_surface_anomaly
-        for pt in self._current_global_path.points:
-            for obs in obstacles:
-                # Surface anomalies (potholes/small debris) never invalidate a
-                # route: they are handled by local planner costs. Treating
-                # them as route blockers made replanning hypersensitive to
-                # perception noise (a 2 cm pothole-estimate jitter could flip
-                # the 1.5 m clearance test and thrash the reference line).
-                if is_surface_anomaly(obs):
-                    continue
-                if oriented_rect_clearance(pt.pose.x, pt.pose.y,
-                                           obs.pose.x, obs.pose.y, obs.pose.heading,
-                                           obs.length, obs.width) < self._invalidation_margin:
-                    return True
+        # Vectorized over (path points x solid obstacles): same oriented-
+        # rectangle distances and the same 1.5 m invalidation margin as the
+        # per-pair loop it replaced (anomalies never invalidate a route).
+        solid = [o for o in obstacles if not is_surface_anomaly(o)]
+        if not solid:
+            return False
+        pts = self._current_global_path.points
+        clear = oriented_rect_clearance_batch(
+            [[pt.pose.x] for pt in pts], [[pt.pose.y] for pt in pts],
+            [o.pose.x for o in solid], [o.pose.y for o in solid],
+            [o.pose.heading for o in solid],
+            [o.length for o in solid], [o.width for o in solid])
+        return bool((clear < self._invalidation_margin).any())
         return False

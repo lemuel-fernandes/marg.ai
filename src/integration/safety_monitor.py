@@ -51,23 +51,35 @@ class EnvelopeSafetyMonitor:
         # speed-dependent buffer at higher speeds. Applying a large static
         # margin at t=0 freezes the vehicle whenever it is legitimately closer
         # than the margin (e.g. right after a low-speed creep-past maneuver).
-        from src.common.utils.geometry import oriented_rect_clearance
+        from src.common.utils.geometry import oriented_rect_clearance_batch
         from src.common.types.obstacle import is_surface_anomaly
-        for pt in trajectory.points:
-            # Speed-dependent buffer for higher-speed travel
-            dynamic_margin = 0.1 + 0.1 * max(pt.twist.vx, 0.0)
-            for obs in obstacles:
-                # Surface anomalies (potholes/small ground debris) are handled by planner costs
-                if is_surface_anomaly(obs):
-                    continue
+        import numpy as np
 
-                px = obs.pose.x + obs.velocity.vx * pt.t
-                py = obs.pose.y + obs.velocity.vy * pt.t
-                clear = oriented_rect_clearance(pt.pose.x, pt.pose.y,
-                                                px, py, obs.pose.heading,
-                                                obs.length, obs.width)
-                if clear < dynamic_margin:
-                    return self._reject(f"Predicted collision at t={pt.t:.2f}s")
+        # Evaluate every (trajectory point, obstacle) pair in ONE vectorized
+        # array pass: distances are identical to the per-pair
+        # oriented_rect_clearance loop it replaces (see the batch helper), and
+        # the early-reject rule is preserved by scanning points in order and
+        # taking the min clearance per point — the first point with a violation
+        # produces the same "Predicted collision at t=..." rejection.
+        solid = [o for o in obstacles if not is_surface_anomaly(o)]
+        if solid:
+            t_col = np.array([pt.t for pt in trajectory.points])[:, None]   # (n,1)
+            fx = (np.array([o.pose.x for o in solid])[None, :]
+                  + np.array([o.velocity.vx for o in solid])[None, :] * t_col)
+            fy = (np.array([o.pose.y for o in solid])[None, :]
+                  + np.array([o.velocity.vy for o in solid])[None, :] * t_col)
+            clear = oriented_rect_clearance_batch(
+                np.array([pt.pose.x for pt in trajectory.points])[:, None],
+                np.array([pt.pose.y for pt in trajectory.points])[:, None],
+                fx, fy,
+                [o.pose.heading for o in solid],
+                [o.length for o in solid], [o.width for o in solid])  # (n, n_obs)
+            margins = np.array([0.1 + 0.1 * max(pt.twist.vx, 0.0)
+                                for pt in trajectory.points])
+            bad = (clear < margins[:, None]).any(axis=1)
+            if bad.any():
+                pt = trajectory.points[int(np.argmax(bad))]
+                return self._reject(f"Predicted collision at t={pt.t:.2f}s")
 
         return self._ok()
 

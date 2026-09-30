@@ -132,7 +132,7 @@ class FrameRenderer:
                 if shown >= 24:
                     break
                 pts = getattr(c, "points", None)
-                if not pts:
+                if pts is None or len(pts) == 0:  # ndarray: no truth value
                     continue
                 ax.plot([p[0] for p in pts], [p[1] for p in pts],
                         color=C_CAND, lw=0.5, alpha=0.15, zorder=3)

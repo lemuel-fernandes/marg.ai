@@ -9,7 +9,7 @@ back in behind the truck when an oncoming bike appears).
 
 import math
 import random
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from src.common.types.base import Covariance2D, FrameId, Header, Pose2D, Twist2D
 from src.common.types.config import CostmapConfig, DWAConfig, VehicleConfig
@@ -140,9 +140,17 @@ class IndianRoadScenario(Scenario):
     def goal(self) -> Pose2D:
         return Pose2D(75.0, 1.5, 0.0)
 
+    # Cached static curbs: _road_boundaries is (x, y, heading, dims, ids)
+    # constant; only its header stamp changed per call. Nothing reads a curb
+    # stamp downstream (obstacle stamps are ignored by the costmap, planner,
+    # and metrics), so build the 100 blocks once and reuse the objects.
+    _curbs: Optional[List[Obstacle]] = None
+
     def obstacles_at(self, t: float) -> List[Obstacle]:
         obs = []
-        obs.extend(_road_boundaries(t))
+        if IndianRoadScenario._curbs is None:
+            IndianRoadScenario._curbs = _road_boundaries(t)
+        obs.extend(IndianRoadScenario._curbs)
         obs.append(_slow_truck(t))
         
         bike = _oncoming_bike(t)
